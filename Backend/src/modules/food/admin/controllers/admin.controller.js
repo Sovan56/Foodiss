@@ -9,6 +9,7 @@ import { validateDeliveryCommissionRuleDto, validateOptionalStatusDto, validateR
 import { validateZoneDeliverySurgeUpsertDto } from '../validators/zoneDeliverySurge.validator.js';
 import { validateDeliveryEmergencyHelpUpsertDto } from '../validators/deliveryEmergencyHelp.validator.js';
 import { validateReferralSettingsUpsertDto } from '../validators/referralSettings.validator.js';
+import { validateFeeSettingsUpsertDto } from '../validators/feeSettings.validator.js';
 import { ADMIN_ACTIONS, ADMIN_PERMISSION_SECTIONS, sanitizeAdminPermissions } from '../../../../constants/permissions.js';
 import {
     deassignAndResendEmergencyOrder,
