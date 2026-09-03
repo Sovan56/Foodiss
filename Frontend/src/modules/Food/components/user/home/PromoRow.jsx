@@ -14,6 +14,13 @@ const DEFAULT_PROMO_ITEMS = [
     href: '/food/user/offers',
   },
   {
+    id: 'grocery',
+    title: "Fresh Groceries",
+    label: "Grocery",
+    image: "https://images.unsplash.com/vector-1763382329927-1b1f16b5b5aa?fm=png&q=80&w=256&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    href: 'https://grocery.foodiss.in/',
+  },
+  {
     id: 'gourmet',
     title: "Premium",
     label: "Gourmet",
@@ -50,7 +57,7 @@ export default function PromoRow({ items, navigate, toggleRef }) {
   }, [items]);
 
   return (
-    <div className="grid grid-cols-4 gap-2 px-3 py-6 bg-transparent justify-items-center w-full max-w-[500px] mx-auto">
+    <div className="grid grid-cols-5 gap-2 px-3 py-6 bg-transparent justify-items-center w-full max-w-[500px] mx-auto">
       {promoCardsData.map((promo, idx) => (
         <motion.div
           key={promo.id || idx}
@@ -62,7 +69,12 @@ export default function PromoRow({ items, navigate, toggleRef }) {
           whileTap={{ scale: 0.95 }}
           className="flex flex-col items-center gap-1.5 group cursor-pointer w-full"
           onClick={() => {
-            if (promo.href) navigate(promo.href);
+            if (!promo.href) return;
+            if (/^https?:\/\//i.test(promo.href)) {
+              window.open(promo.href, '_blank');
+            } else {
+              navigate(promo.href);
+            }
           }}
         >
           <div className="relative flex aspect-square w-14 shrink-0 items-center justify-center sm:w-16">

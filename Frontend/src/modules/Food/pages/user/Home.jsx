@@ -1253,6 +1253,10 @@ export default function Home() {
         );
       }
 
+      if (slot.id === "grocery") {
+        return label.includes("grocery");
+      }
+
       return false;
     }) || null;
   }, []);
@@ -1266,6 +1270,13 @@ export default function Home() {
         label: "Offers",
         image: exploreOffers,
         href: "/food/user/offers",
+      },
+      {
+        id: "grocery",
+        title: "Fresh Groceries",
+        label: "Grocery",
+        image: "https://images.unsplash.com/vector-1763382329927-1b1f16b5b5aa?fm=png&q=80&w=256&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+        href: "https://grocery.foodiss.in/",
       },
       {
         id: "gourmet",
