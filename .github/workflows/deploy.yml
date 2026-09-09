@@ -35,7 +35,8 @@ jobs:
             echo "Updating Backend..."
             cd Backend
             npm install
-            pm2 restart foodiss-backend
+            pm2 restart foodiss-backend || pm2 start server.js --name foodiss-backend
+            pm2 save
 
             # Update Frontend
             echo "Updating Frontend..."
