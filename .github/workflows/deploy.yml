@@ -19,7 +19,12 @@ jobs:
           script: |
             set -e # Exit immediately if any command fails!
 
-            # Navigate to the cloned repository
+            # Navigate to the repository, cloning it if it doesn't exist
+            if [ ! -d "~/Foodiss" ]; then
+              echo "Repository not found! Cloning it now..."
+              cd ~
+              git clone https://github.com/Sovan56/Foodiss.git
+            fi
             cd ~/Foodiss
 
             # Pull latest changes
