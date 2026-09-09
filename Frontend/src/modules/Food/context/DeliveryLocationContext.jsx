@@ -47,9 +47,10 @@ export function DeliveryLocationProvider({ children }) {
   const [addressRevision, setAddressRevision] = useState(0)
 
   useEffect(() => {
-    // New tab / first load always starts on live GPS unless the user later
-    // explicitly picks a saved address in the location selector.
-    persistDeliveryAddressMode("current")
+    // Only set to current if no mode was previously saved
+    if (typeof window !== "undefined" && !window.localStorage.getItem("deliveryAddressMode")) {
+      persistDeliveryAddressMode("current")
+    }
   }, [])
 
   useEffect(() => {

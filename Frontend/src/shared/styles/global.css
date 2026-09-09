@@ -171,3 +171,7 @@
   z-index: 999999 !important;
   pointer-events: auto !important;
 }
+
+html, body {
+  overscroll-behavior-y: none;
+}
