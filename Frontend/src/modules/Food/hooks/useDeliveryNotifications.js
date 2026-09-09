@@ -2,8 +2,8 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import io from 'socket.io-client';
 import { API_BASE_URL } from '@food/api/config';
 import { deliveryAPI } from '@food/api';
-import alertSound from '@food/assets/audio/alert.mp3';
-import originalSound from '@food/assets/audio/original.mp3';
+
+import { startAlert, stopAlert, stopAllAlerts, attachAlertUnlockListeners } from '../utils/audioSessionManager';
 import { dispatchNotificationInboxRefresh } from '@food/hooks/useNotificationInbox';
 import { useDeliveryStore } from '@/modules/DeliveryV2/store/useDeliveryStore';
 
@@ -34,17 +34,8 @@ const debugError = (...args) => {
   console.error('[DeliverySocket]', ...args);
 };
 
-if (typeof window !== 'undefined') {
-  debugLog('alertSound URL:', alertSound);
-  debugLog('originalSound URL:', originalSound);
-}
 
-const resolveAudioSource = (source) => {
-  if (!source) return '';
-  // Handle ES6 module imports where the URL might be in a 'default' property
-  const url = typeof source === 'object' ? (source.default || source) : source;
-  return url;
-};
+
 
 const safeReadJson = (key) => {
   try {
@@ -129,43 +120,6 @@ const buildDeliveryOrderNotification = (orderData = {}) => {
   };
 }
 
-const triggerWebViewNativeNotification = async (orderData = {}) => {
-  if (typeof window === 'undefined') return false;
-
-  const bridgePayload = {
-    title: 'New delivery order',
-    body: `Order #${orderData?.orderId || orderData?.orderMongoId || orderData?.id || ''}`.trim(),
-    orderId: orderData?.orderId || orderData?.order_id || '',
-    orderMongoId: orderData?.orderMongoId || orderData?.order_mongo_id || '',
-    targetUrl: '/delivery',
-    disableActions: true,
-  };
-
-  try {
-    if (
-      window.flutter_inappwebview &&
-      typeof window.flutter_inappwebview.callHandler === 'function'
-    ) {
-      const handlerNames = [
-        'playNotificationSound',
-        'triggerNotificationFeedback',
-      ];
-
-      for (const handlerName of handlerNames) {
-        try {
-          await window.flutter_inappwebview.callHandler(handlerName, bridgePayload);
-          return true;
-        } catch {
-          // Try next handler name.
-        }
-      }
-    }
-  } catch {
-    // Ignore bridge failures and fall back to browser/web audio.
-  }
-
-  return false;
-}
 
 
 export const useDeliveryNotifications = () => {
@@ -174,12 +128,12 @@ export const useDeliveryNotifications = () => {
   
   // Step 1: All refs first (unconditional)
   const socketRef = useRef(null);
-  const audioRef = useRef(null);
-  const audioUnlockAttemptedRef = useRef(false);
+  
+  
   const activeOrderRef = useRef(null);
-  const alertLoopTimerRef = useRef(null);
-  const alertLoopStartedAtRef = useRef(0);
-  const userInteractedRef = useRef(false);
+  
+  
+  
   const lastAlertAtByOrderRef = useRef(new Map());
   const lastBrowserNotificationAtByOrderRef = useRef(new Map());
   
@@ -193,6 +147,10 @@ export const useDeliveryNotifications = () => {
   const newOrderRef = useRef(null);
   const pendingOffersRef = useRef([]); // Concurrent offers waiting behind the current modal
   const activeTripRef = useRef(null);
+  useEffect(() => {
+    const cleanup = attachAlertUnlockListeners();
+    return cleanup;
+  }, []);
   const activeOrder = useDeliveryStore((state) => state.activeOrder);
   const tripStatus = useDeliveryStore((state) => state.tripStatus);
   const ALERT_LOOP_INTERVAL_MS = 4500;
@@ -204,6 +162,7 @@ export const useDeliveryNotifications = () => {
   useEffect(() => {
     newOrderRef.current = newOrder;
   }, [newOrder]);
+
 
   useEffect(() => {
     const hasActiveTrip =
@@ -289,88 +248,8 @@ export const useDeliveryNotifications = () => {
     return true;
   };
 
-  const stopAlertLoop = useCallback(() => {
-    if (alertLoopTimerRef.current) {
-      clearInterval(alertLoopTimerRef.current);
-      alertLoopTimerRef.current = null;
-    }
-    alertLoopStartedAtRef.current = 0;
-  }, []);
 
-  const startAlertLoop = useCallback((playSoundFn) => {
-    stopAlertLoop();
-    alertLoopStartedAtRef.current = Date.now();
-
-    alertLoopTimerRef.current = setInterval(() => {
-      const elapsed = Date.now() - alertLoopStartedAtRef.current;
-      if (elapsed >= ALERT_LOOP_MAX_MS || !activeOrderRef.current) {
-        stopAlertLoop();
-        return;
-      }
-
-      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
-        playSoundFn(activeOrderRef.current);
-      }
-    }, ALERT_LOOP_INTERVAL_MS);
-  }, [stopAlertLoop]);
   
-  const playNotificationSound = useCallback(async (orderData = {}) => {
-    try {
-      const usedNativeBridge = await triggerWebViewNativeNotification(orderData);
-
-      if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
-        navigator.vibrate([200, 100, 200, 100, 300]);
-      }
-
-      if (usedNativeBridge) {
-        return;
-      }
-
-      // Get current selected sound preference from localStorage
-      const selectedSound = localStorage.getItem('delivery_alert_sound') || 'zomato_tone';
-      const soundFile = selectedSound === 'original'
-        ? resolveAudioSource(originalSound, 'delivery-original')
-        : resolveAudioSource(alertSound, 'delivery-alert');
-      
-      // Update audio source if preference changed or initialize if not exists
-      if (audioRef.current) {
-        const currentSrc = audioRef.current.src;
-        const newSrc = soundFile;
-        // Check if source needs to be updated
-        if (!currentSrc.includes(newSrc.split('/').pop())) {
-          audioRef.current.pause();
-          audioRef.current.src = newSrc;
-          audioRef.current.load();
-          debugLog('?? Audio source updated to:', selectedSound === 'original' ? 'Original' : 'Foodiss Tone');
-        }
-      } else {
-        // Initialize audio if not exists
-        audioRef.current = new Audio();
-        audioRef.current.src = soundFile;
-        audioRef.current.preload = 'auto';
-        audioRef.current.volume = 0.9;
-        audioRef.current.load();
-        debugLog('?? Audio initialized with:', selectedSound === 'original' ? 'Original' : 'Foodiss Tone', 'Source:', soundFile);
-      }
-      
-      if (audioRef.current) {
-        audioRef.current.muted = false;
-        audioRef.current.volume = 0.9;
-        audioRef.current.currentTime = 0;
-        audioRef.current.play().catch(error => {
-          // On strict autoplay environments, we still keep vibration/native bridge path active.
-          if (!error.message?.includes('user didn\'t interact') && !error.name?.includes('NotAllowedError')) {
-            debugWarn('Error playing notification sound:', error);
-          }
-        });
-      }
-    } catch (error) {
-      // Don't log autoplay policy errors
-      if (!error.message?.includes('user didn\'t interact') && !error.name?.includes('NotAllowedError')) {
-        debugWarn('Error playing sound:', error);
-      }
-    }
-  }, []);
 
   const showBackgroundOrderNotification = useCallback(async (orderData = {}) => {
     if (!shouldShowBrowserNotification(orderData)) {
@@ -425,13 +304,12 @@ export const useDeliveryNotifications = () => {
     }
 
     activeOrderRef.current = orderData || { id: Date.now() };
-    playNotificationSound(orderData);
-    startAlertLoop(playNotificationSound);
+    startAlert(orderData, 'delivery');
 
     if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
       showBackgroundOrderNotification(orderData);
     }
-  }, [isPartnerBusy, playNotificationSound, showBackgroundOrderNotification, startAlertLoop]);
+  }, [isPartnerBusy, showBackgroundOrderNotification]);
 
   const recoverDeliveryState = useCallback(async () => {
     if (!deliveryPartnerId) return;
@@ -486,7 +364,8 @@ export const useDeliveryNotifications = () => {
           debugLog('Recovered available delivery order after reconnect/focus:', recoverableOrder);
           const result = enqueueOffer(recoverableOrder);
           if (result === 'shown') {
-            handleIncomingOrderAlert(recoverableOrder);
+            // Only show the modal visually, do not blast the alarm sound on recovery/focus
+            // handleIncomingOrderAlert(recoverableOrder);
           }
         }
       }
@@ -595,7 +474,7 @@ export const useDeliveryNotifications = () => {
       if (document.visibilityState !== 'hidden') return;
       if (!activeOrderRef.current) return;
 
-      playNotificationSound(activeOrderRef.current);
+      startAlert(activeOrderRef.current, 'delivery');
       showBackgroundOrderNotification(activeOrderRef.current);
     };
 
@@ -603,107 +482,9 @@ export const useDeliveryNotifications = () => {
     return () => {
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [playNotificationSound, showBackgroundOrderNotification]);
+  }, [showBackgroundOrderNotification]);
 
-  // Track user interaction for autoplay policy
-  useEffect(() => {
-    const handleUserInteraction = async () => {
-      userInteractedRef.current = true;
 
-      const selectedSound = localStorage.getItem('delivery_alert_sound') || 'zomato_tone';
-      const soundFile = selectedSound === 'original'
-        ? resolveAudioSource(originalSound, 'delivery-original')
-        : resolveAudioSource(alertSound, 'delivery-alert');
-
-      if (!audioRef.current) {
-        audioRef.current = new Audio(soundFile);
-        audioRef.current.preload = 'auto';
-        audioRef.current.volume = 0.7;
-      }
-
-      if (!audioUnlockAttemptedRef.current && audioRef.current) {
-        audioUnlockAttemptedRef.current = true;
-        try {
-          audioRef.current.muted = true;
-          // Ensure src is set even if it was just initialized
-          if (!audioRef.current.src || audioRef.current.src === window.location.href) {
-             const selectedSound = localStorage.getItem('delivery_alert_sound') || 'zomato_tone';
-             const soundFile = selectedSound === 'original'
-                ? resolveAudioSource(originalSound)
-                : resolveAudioSource(alertSound);
-             audioRef.current.src = soundFile;
-          }
-          audioRef.current.load();
-          await audioRef.current.play();
-          audioRef.current.pause();
-          audioRef.current.currentTime = 0;
-          debugLog('?? Audio unlocked successfully');
-        } catch (error) {
-          audioUnlockAttemptedRef.current = false;
-          if (!error.message?.includes('user didn\'t interact') && !error.name?.includes('NotAllowedError')) {
-            debugWarn('Error unlocking notification audio:', error, 'Audio src:', audioRef.current?.src);
-          }
-        } finally {
-          // Ensure audio never remains muted after unlock attempts.
-          if (audioRef.current) {
-            audioRef.current.muted = false;
-          }
-        }
-      }
-
-      // Remove listeners after first interaction
-      document.removeEventListener('click', handleUserInteraction);
-      document.removeEventListener('touchstart', handleUserInteraction);
-      document.removeEventListener('keydown', handleUserInteraction);
-      window.removeEventListener('pointerdown', handleUserInteraction);
-    };
-    
-    // Listen for user interaction
-    document.addEventListener('click', handleUserInteraction, { once: true });
-    document.addEventListener('touchstart', handleUserInteraction, { once: true });
-    document.addEventListener('keydown', handleUserInteraction, { once: true });
-    window.addEventListener('pointerdown', handleUserInteraction, { once: true, passive: true });
-    
-    return () => {
-      document.removeEventListener('click', handleUserInteraction);
-      document.removeEventListener('touchstart', handleUserInteraction);
-      document.removeEventListener('keydown', handleUserInteraction);
-      window.removeEventListener('pointerdown', handleUserInteraction);
-    };
-  }, []);
-  
-  // Initialize audio on mount - use selected preference from localStorage
-  useEffect(() => {
-    // Get selected alert sound preference from localStorage
-    const selectedSound = localStorage.getItem('delivery_alert_sound') || 'zomato_tone';
-    const soundFile = selectedSound === 'original'
-      ? resolveAudioSource(originalSound, 'delivery-original')
-      : resolveAudioSource(alertSound, 'delivery-alert');
-    
-    if (!audioRef.current) {
-      audioRef.current = new Audio(soundFile);
-      audioRef.current.preload = 'auto';
-      audioRef.current.volume = 0.7;
-      debugLog('?? Audio initialized with:', selectedSound === 'original' ? 'Original' : 'Foodiss Tone');
-    } else {
-      // Update audio source if preference changed
-      const currentSrc = audioRef.current.src;
-      const newSrc = soundFile;
-      if (!currentSrc.includes(newSrc.split('/').pop())) {
-        audioRef.current.pause();
-        audioRef.current.src = newSrc;
-        audioRef.current.load();
-        debugLog('?? Audio updated to:', selectedSound === 'original' ? 'Original' : 'Foodiss Tone');
-      }
-    }
-    
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
-  }, []); // Note: This runs once on mount. To update dynamically, we'd need to listen to storage events
 
   // Fetch delivery partner ID
   useEffect(() => {
@@ -967,36 +748,14 @@ export const useDeliveryNotifications = () => {
       }
     });
 
-    socketRef.current.on('play_notification_sound', (data) => {
-      if (isPartnerBusy()) {
-        debugLog('Ignoring play_notification_sound because partner already has an active trip');
-        return;
-      }
-
-      debugLog('play_notification_sound received', {
-        orderId: data?.orderId || data?.orderMongoId || data?.order_id,
-      });
-      const normalizedData = {
-        orderId: data?.orderId || data?.order_id,
-        orderMongoId: data?.orderMongoId || data?.order_mongo_id,
-        ...data
-      };
-      // Force immediate buzz for notification events, even if dedupe would skip.
-      activeOrderRef.current = normalizedData || { id: Date.now() };
-      playNotificationSound(normalizedData);
-      startAlertLoop(playNotificationSound);
-      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
-        showBackgroundOrderNotification(normalizedData);
-      }
-      handleIncomingOrderAlert(normalizedData);
-    });
+    // play_notification_sound socket listener removed to prevent unwanted audio
 
     socketRef.current.on('order_ready', (orderData) => {
       debugLog('order_ready received via socket', {
         orderId: orderData?.orderId || orderData?.orderMongoId || orderData?._id,
       });
       setOrderReady(orderData);
-      playNotificationSound(orderData);
+      // Explicitly removed sound per user request (no sound for Pickup Action popup)
     });
 
     socketRef.current.on('order_status_update', (statusData) => {
@@ -1040,7 +799,7 @@ export const useDeliveryNotifications = () => {
       debugLog('?? Order reassigned to another partner:', data);
       if (data.orderId === activeOrderRef.current?._id || data.orderId === activeOrderRef.current?.orderId) {
         debugLog('?? Removing reassigned order from local state');
-        stopAlertLoop();
+        stopAlert();
         activeOrderRef.current = null;
         pendingOffersRef.current = [];
         setNewOrder(null);
@@ -1049,7 +808,7 @@ export const useDeliveryNotifications = () => {
 
     socketRef.current.on('order_deassigned', (data) => {
       debugLog('Delivery order deassigned by admin:', data);
-      stopAlertLoop();
+      stopAlert();
       activeOrderRef.current = null;
       pendingOffersRef.current = [];
       setNewOrder(null);
@@ -1104,7 +863,7 @@ export const useDeliveryNotifications = () => {
 
     return () => {
       debugLog('? Cleaning up socket connection...');
-      stopAlertLoop();
+      stopAlert();
       joinedDeliveryRoomRef.current = null;
       window.removeEventListener('deliveryAuthChanged', handleAuthChange);
       window.removeEventListener('authRefreshed', handleAuthRefreshed);
@@ -1116,7 +875,7 @@ export const useDeliveryNotifications = () => {
         socketRef.current = null;
       }
     };
-  }, [deliveryPartnerId, enqueueOffer, handleIncomingOrderAlert, isPartnerBusy, joinDeliveryRoomIfPossible, playNotificationSound, recoverDeliveryState, showBackgroundOrderNotification, startAlertLoop, stopAlertLoop]);
+  }, [deliveryPartnerId, enqueueOffer, handleIncomingOrderAlert, isPartnerBusy, joinDeliveryRoomIfPossible,  recoverDeliveryState, showBackgroundOrderNotification]);
 
   useEffect(() => {
     if (!deliveryPartnerId) {
@@ -1145,7 +904,7 @@ export const useDeliveryNotifications = () => {
    */
   const clearNewOrder = useCallback((options = {}) => {
     const advance = options?.advance !== false;
-    stopAlertLoop();
+    stopAlert();
     activeOrderRef.current = null;
 
     if (!advance) {
@@ -1162,9 +921,10 @@ export const useDeliveryNotifications = () => {
     } else {
       setNewOrder(null);
     }
-  }, [handleIncomingOrderAlert, stopAlertLoop]);
+  }, [handleIncomingOrderAlert]);
 
   const clearAllOffers = useCallback(() => {
+    stopAllAlerts();
     clearNewOrder({ advance: false });
   }, [clearNewOrder]);
 
@@ -1194,7 +954,7 @@ export const useDeliveryNotifications = () => {
     orderStatusUpdate,
     clearOrderStatusUpdate,
     isConnected,
-    playNotificationSound,
+    
     emitLocation
   };
 };

@@ -24,6 +24,7 @@ export default function DeliveryOTP() {
   const [verifiedOtp, setVerifiedOtp] = useState("")
   const [pendingMessage, setPendingMessage] = useState("")
   const [isRejected, setIsRejected] = useState(false)
+  const [isDeactivated, setIsDeactivated] = useState(false)
   const [rejectionReason, setRejectionReason] = useState("")
   const [deviceToken, setDeviceToken] = useState(null)
   const [activePlatform, setActivePlatform] = useState("web")
@@ -133,10 +134,11 @@ export default function DeliveryOTP() {
       const response = await deliveryAPI.verifyOTP(phone, code, purpose, null, fcmToken, platform)
       const data = response?.data?.data || response?.data || {}
 
-      if (data.pendingApproval === true) {
+      if (data.pendingApproval === true || data.isRejected || data.isDeactivated) {
         setIsLoading(false)
         setPendingMessage(data.message)
         setIsRejected(data.isRejected || false)
+        setIsDeactivated(data.isDeactivated || false)
         setRejectionReason(data.rejectionReason || "")
         return
       }
@@ -387,11 +389,15 @@ export default function DeliveryOTP() {
                     className={`w-20 h-20 mx-auto rounded-3xl flex items-center justify-center shadow-xl transform rotate-12 ${
                       isRejected
                         ? "bg-red-50 text-red-600 border border-red-100"
-                        : "bg-[#0D9488]/10 text-[#0D9488] border border-[#0D9488]/10"
+                        : isDeactivated
+                          ? "bg-zinc-100 text-zinc-500 border border-zinc-200"
+                          : "bg-[#0D9488]/10 text-[#0D9488] border border-[#0D9488]/10"
                     }`}
                   >
                     {isRejected ? (
                       <AlertCircle size={40} className="-rotate-12" />
+                    ) : isDeactivated ? (
+                      <ShieldCheck size={40} className="-rotate-12" />
                     ) : (
                       <ShieldCheck size={40} className="-rotate-12" />
                     )}
@@ -400,10 +406,10 @@ export default function DeliveryOTP() {
                   <div className="space-y-3">
                     <h3
                       className={`text-xl font-black italic uppercase tracking-tight ${
-                        isRejected ? "text-red-600" : "text-[#0D9488]"
+                        isRejected ? "text-red-600" : isDeactivated ? "text-zinc-500" : "text-[#0D9488]"
                       }`}
                     >
-                      {isRejected ? "Shift Denied" : "Pending Approval"}
+                      {isRejected ? "Shift Denied" : isDeactivated ? "Account Deactivated" : "Pending Approval"}
                     </h3>
                     <p className="text-sm font-medium text-zinc-500 leading-relaxed">{pendingMessage}</p>
                   </div>

@@ -537,8 +537,22 @@ export async function createOrder(userId, dto) {
 
     const feeSettings = await loadActiveFeeSettings();
     const deliverySurge = Number(normalizedPricing.deliverySurge) || 0;
-    const riderEarning = calculateRiderEarning(feeSettings, distanceKm, deliverySurge) || 0;
+    let riderEarning = calculateRiderEarning(feeSettings, distanceKm, deliverySurge) || 0;
     
+    // Non-blocking Rain Incentive check
+    let rainIncentiveResult = null;
+    try {
+      const { calculateRainIncentive } = await import('./order-pricing.service.js');
+      const lat = deliveryAddress?.latitude ?? deliveryAddress?.lat;
+      const lng = deliveryAddress?.longitude ?? deliveryAddress?.lng;
+      rainIncentiveResult = await calculateRainIncentive(riderEarning, lat, lng);
+      if (rainIncentiveResult && rainIncentiveResult.rainIncentiveAmount > 0) {
+        riderEarning += rainIncentiveResult.rainIncentiveAmount;
+      }
+    } catch (e) {
+      logger.warn(`Failed to apply rain incentive for order creation: ${e.message}`);
+    }
+
     // Calculate restaurant commission from subtotal
     let restaurantCommission = 0;
     try {
@@ -599,8 +613,14 @@ export async function createOrder(userId, dto) {
       sendCutlery: dto.sendCutlery !== false,
       deliveryFleet: String(dto.deliveryFleet || "standard"),
       scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
+      initialDeliverySurge: deliverySurge,
       riderEarning: Number(riderEarning) || 0,
+      rainIncentiveApplied: rainIncentiveResult?.rainIncentiveApplied || false,
+      rainIncentiveType: rainIncentiveResult?.rainIncentiveType || null,
+      rainIncentiveValue: rainIncentiveResult?.rainIncentiveValue || 0,
+      rainIncentiveAmount: rainIncentiveResult?.rainIncentiveAmount || 0,
       platformProfit: Number(platformProfit) || 0,
+      cancellationReason: "",
     });
 
     let razorpayPayload = null;
@@ -1266,6 +1286,8 @@ export async function cancelOrder(orderId, userId, reason) {
       };
       io.to(rooms.user(userId)).emit("order_status_update", payload);
       io.to(rooms.restaurant(order.restaurantId)).emit("order_status_update", payload);
+      const adminRoom = rooms.admin ? rooms.admin() : 'admin:orders';
+      io.to(adminRoom).emit("order_status_update", payload);
     }
   } catch (err) {
     logger.warn(`cancelOrder socket emit failed: ${err?.message || err}`);
@@ -1667,7 +1689,14 @@ export async function updateOrderStatusRestaurant(
                     );
                     io.to(rooms.delivery(assignedId)).emit('order_ready', payload);
                 } else {
-                    console.log(`[DEBUG] Order ${order._id.toString()} is ready but no partner assigned.`);
+                    // No partner assigned yet - re-hunt for a delivery partner for this ready order.
+                    console.log(`[DEBUG] Order ${order._id.toString()} is ready but no partner assigned. Re-triggering dispatch.`);
+                    try {
+                        await tryAutoAssign(order._id);
+                        order = await FoodOrder.findById(order._id);
+                    } catch (dispatchErr) {
+                        console.error(`[DEBUG] Re-dispatch on ready_for_pickup failed:`, dispatchErr);
+                    }
                 }
             }
         }

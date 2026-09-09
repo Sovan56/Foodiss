@@ -97,25 +97,19 @@ export default function Navbar() {
             <Button
               variant="ghost"
               onClick={handleLocationClick}
-              disabled={loading}
+              className="h-auto p-0 hover:bg-transparent cursor-pointer"
             >
-              {loading ? (
-                <span className="text-xs sm:text-sm font-semibold text-left text-black">
-                  Loading...
+              <div className="flex flex-col items-start w-full min-w-0">
+                <span className="text-xs sm:text-sm flex flex-row items-center gap-1 font-semibold text-left text-foreground truncate w-full">
+                  <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-black flex-shrink-0" />
+                  {cityName || (loading ? "Detecting location..." : "Select Location")}
                 </span>
-              ) : (
-                <div className="flex flex-col items-start w-full min-w-0">
-                  <span className="text-xs sm:text-sm flex flex-row items-center gap-1 font-semibold text-left text-foreground truncate w-full">
-                    <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-black flex-shrink-0" />
-                    {cityName}
+                {location?.state && (
+                  <span className="text-[10px] sm:text-xs text-black pt-1 text-left truncate w-full">
+                    {stateName}
                   </span>
-                  {location?.state && (
-                    <span className="text-[10px] sm:text-xs text-black pt-1 text-left truncate w-full">
-                      {stateName}
-                    </span>
-                  )}
-                </div>
-              )}
+                )}
+              </div>
             </Button>
           </div>
 

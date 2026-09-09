@@ -144,6 +144,21 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
   const [activePolyline, setActivePolyline] = useState(null);
   const mapRef = useRef(null);
 
+  const activeOrderRef = useRef(activeOrder);
+  activeOrderRef.current = activeOrder;
+  const tripStatusRef = useRef(tripStatus);
+  tripStatusRef.current = tripStatus;
+  const activePolylineRef = useRef(activePolyline);
+  activePolylineRef.current = activePolyline;
+  const distanceToTargetRef = useRef(distanceToTarget);
+  distanceToTargetRef.current = distanceToTarget;
+  const emitLocationRef = useRef(emitLocation);
+  emitLocationRef.current = emitLocation;
+  const reachPickupRef = useRef(reachPickup);
+  reachPickupRef.current = reachPickup;
+  const reachDropRef = useRef(reachDrop);
+  reachDropRef.current = reachDrop;
+
   const isLoggingOut = useRef(false);
   const handleLogout = useCallback(async () => {
     if (isLoggingOut.current) return;
@@ -409,31 +424,36 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
       // ETA update is now handled by a separate globally-synchronized effect
 
       // Phase 11: Geo-fencing Auto-arrival (within 100m) - Disabled in DEV so UI steps can be tested manually
-      if (!isSimMode && !import.meta.env.DEV && distanceToTarget && distanceToTarget <= 100 && !lastAutoArrivalRef.current[tripStatus]) {
-        if (tripStatus === 'PICKING_UP') {
-          lastAutoArrivalRef.current[tripStatus] = true;
-          reachPickup().catch(() => { lastAutoArrivalRef.current[tripStatus] = false; });
+      const currentTripStatus = tripStatusRef.current;
+      const currentDistance = distanceToTargetRef.current;
+      if (!isSimMode && !import.meta.env.DEV && currentDistance && currentDistance <= 100 && !lastAutoArrivalRef.current[currentTripStatus]) {
+        if (currentTripStatus === 'PICKING_UP') {
+          lastAutoArrivalRef.current[currentTripStatus] = true;
+          reachPickupRef.current().catch(() => { lastAutoArrivalRef.current[currentTripStatus] = false; });
           // toast.success('Auto-arrived at Restaurant');
-        } else if (tripStatus === 'PICKED_UP') {
-          lastAutoArrivalRef.current[tripStatus] = true;
-          reachDrop().catch(() => { lastAutoArrivalRef.current[tripStatus] = false; });
+        } else if (currentTripStatus === 'PICKED_UP') {
+          lastAutoArrivalRef.current[currentTripStatus] = true;
+          reachDropRef.current().catch(() => { lastAutoArrivalRef.current[currentTripStatus] = false; });
           // toast.success('Auto-arrived at Customer');
         }
       }
 
       // Reset auto-arrival flag if we move away or status resets (usually handled by component mount, but for safety)
-      if (distanceToTarget > 200) {
-        lastAutoArrivalRef.current[tripStatus] = false;
+      if (currentDistance > 200 && currentTripStatus) {
+        lastAutoArrivalRef.current[currentTripStatus] = false;
       }
 
-      // Check threshold for Sync (distance-based or 7s time-based)
+      // Check threshold for Sync (distance-based or 2.5s time-based)
       const distMoved = lastCoordRef.current
         ? getHaversineDistance(lat, lng, lastCoordRef.current.lat, lastCoordRef.current.lng)
         : 1000; // assume huge distance if first update
 
-      if (distMoved >= 25 || (now - lastLocationSentAt.current >= 7000)) {
+      if (distMoved >= 10 || (now - lastLocationSentAt.current >= 2500)) {
         lastLocationSentAt.current = now;
         lastCoordRef.current = { lat, lng };
+
+        const currentActiveOrder = activeOrderRef.current;
+        const targetOrderId = currentActiveOrder?.orderMongoId || currentActiveOrder?._id || currentActiveOrder?.orderId || null;
 
         const payload = {
           lat,
@@ -441,15 +461,15 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
           heading: heading || 0,
           speed: speed || 0,
           accuracy: pos.coords.accuracy,
-          orderId: activeOrder?.orderMongoId || activeOrder?._id || activeOrder?.orderId,
+          orderId: targetOrderId,
           status: 'on_the_way',
-          polyline: activePolyline
+          polyline: activePolylineRef.current
         };
 
         const hasActiveOrder = Boolean(payload.orderId);
 
         if (hasActiveOrder) {
-          const emitted = emitLocation(payload);
+          const emitted = emitLocationRef.current ? emitLocationRef.current(payload) : false;
           if (!emitted) {
             deliveryAPI.updateLocation(lat, lng, true, {
               heading: heading || 0,

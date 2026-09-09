@@ -89,8 +89,13 @@ export const useUserNotifications = () => {
       const isImportant = String(data.orderStatus).includes('cancel') || ['ready_for_pickup', 'ready', 'confirmed'].includes(data.orderStatus);
       if (isImportant) {
         toast.message(title, {
+          id: `order-status-${data.orderId || 'update'}`,
           description: message,
-          duration: 10000
+          duration: 10000,
+          action: {
+            label: 'Clear All',
+            onClick: () => toast.dismiss()
+          }
         });
       }
 

@@ -474,7 +474,7 @@ export const applyDeliveryCompletionWalletUpdates = async ({
         inc.cashInHand = cashCollect;
     }
 
-    return FoodDeliveryWallet.findOneAndUpdate(
+    const updatedWallet = await FoodDeliveryWallet.findOneAndUpdate(
         { deliveryPartnerId: partnerOid },
         {
             $inc: inc,
@@ -482,6 +482,82 @@ export const applyDeliveryCompletionWalletUpdates = async ({
         },
         { upsert: true, new: true }
     );
+    
+    // Non-blocking check for Weekly Slab Incentives
+    try {
+        await checkWeeklySlabIncentives(partnerOid, updatedWallet);
+    } catch (e) {
+        console.warn(`[WeeklySlab] Failed to calculate weekly slab for partner ${partnerOid}: ${e.message}`);
+    }
+
+    return updatedWallet;
+};
+
+const checkWeeklySlabIncentives = async (partnerOid, walletDoc) => {
+    const { FoodDeliveryIncentiveSlab } = await import('../../admin/models/foodDeliveryIncentive.model.js');
+    const { sendPushNotification } = await import('../../../../core/notifications/firebase.service.js').catch(() => ({ sendPushNotification: () => {} }));
+
+    const activeSlabs = await FoodDeliveryIncentiveSlab.find({ isActive: true }).lean();
+    if (!activeSlabs || activeSlabs.length === 0) return;
+
+    // Get start and end of current week (Monday to Sunday)
+    const now = new Date();
+    const dayOfWeek = now.getDay() || 7; // 1 (Mon) to 7 (Sun)
+    const startOfWeek = new Date(now);
+    startOfWeek.setHours(0, 0, 0, 0);
+    startOfWeek.setDate(startOfWeek.getDate() - (dayOfWeek - 1));
+
+    // Count successful deliveries this week
+    const totalDeliveriesThisWeek = await FoodOrder.countDocuments({
+        'dispatch.deliveryPartnerId': partnerOid,
+        orderStatus: 'delivered',
+        'deliveryState.deliveredAt': { $gte: startOfWeek }
+    });
+
+    // Find any matching slabs for the exact count
+    for (const slab of activeSlabs) {
+        if (totalDeliveriesThisWeek === slab.deliveriesRequired) {
+            // Found a matching slab! Credit the extra incentive.
+            const extraIncentive = Number(slab.extraIncentive) || 0;
+            if (extraIncentive > 0) {
+                await FoodDeliveryWallet.findOneAndUpdate(
+                    { deliveryPartnerId: partnerOid },
+                    { 
+                        $inc: { 
+                            balance: extraIncentive,
+                            totalEarnings: extraIncentive
+                        }
+                    }
+                );
+                
+                // Add a transaction record for clarity if DeliveryBonusTransaction exists (optional)
+                try {
+                    const { DeliveryBonusTransaction } = await import('../../admin/models/deliveryBonusTransaction.model.js');
+                    await DeliveryBonusTransaction.create({
+                        deliveryPartnerId: partnerOid,
+                        amount: extraIncentive,
+                        bonusType: 'slab_incentive',
+                        note: `Weekly slab incentive: ${slab.slabName} for completing ${slab.deliveriesRequired} deliveries.`,
+                        status: 'approved',
+                        approvedByRole: 'SYSTEM'
+                    });
+                } catch (e) {
+                    console.warn(`[WeeklySlab] Failed to record bonus transaction: ${e.message}`);
+                }
+
+                // Send notification
+                const partner = await FoodDeliveryPartner.findById(partnerOid).select('fcmToken').lean();
+                if (partner?.fcmToken) {
+                    sendPushNotification({
+                        tokens: [partner.fcmToken],
+                        title: 'Incentive Unlocked! 🎉',
+                        body: `Congratulations! You hit ${slab.slabName} and earned an extra ₹${extraIncentive}!`,
+                        data: { type: 'incentive_unlocked' }
+                    }).catch(err => console.warn(`[WeeklySlab] Failed to send push: ${err.message}`));
+                }
+            }
+        }
+    }
 };
 
 /**

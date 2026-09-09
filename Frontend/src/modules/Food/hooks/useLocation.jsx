@@ -60,7 +60,7 @@ const LIVE_WATCH_GEO_OPTIONS = {
   maximumAge: 0,
 }
 const GOOD_ACCURACY_M = 50
-const ACCURACY_WATCH_MS = 8000
+const ACCURACY_WATCH_MS = 15000
 const STALE_GPS_MS = 30000
 let globalAccurateGpsInFlight = null
 let globalAccurateGpsLastAt = 0
@@ -924,6 +924,9 @@ export function useLocation() {
         return lastDbLocationRef.current
       }
 
+      if (typeof userAPI?.getLocation !== "function") {
+        return null
+      }
       const res = await userAPI.getLocation()
       const loc = res?.data?.data?.location
       if (loc?.latitude && loc?.longitude) {

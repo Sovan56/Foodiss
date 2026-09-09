@@ -215,6 +215,14 @@ export const notificationAPI = {
 
 /** Admin API - new backend only (GET /auth/me, PATCH /auth/admin/profile, POST /auth/admin/change-password) */
 export const adminAPI = {
+  // Delivery Incentives & Rain
+  getRainIncentiveSettings: () => apiClient.get('/food/admin/incentive/settings/rain', { contextModule: 'admin' }),
+  updateRainIncentiveSettings: (body) => apiClient.put('/food/admin/incentive/settings/rain', body, { contextModule: 'admin' }),
+  getIncentiveSlabs: () => apiClient.get('/food/admin/incentive/slabs', { contextModule: 'admin' }),
+  createIncentiveSlab: (body) => apiClient.post('/food/admin/incentive/slabs', body, { contextModule: 'admin' }),
+  updateIncentiveSlab: (id, body) => apiClient.put(`/food/admin/incentive/slabs/${id}`, body, { contextModule: 'admin' }),
+  deleteIncentiveSlab: (id) => apiClient.delete(`/food/admin/incentive/slabs/${id}`, { contextModule: 'admin' }),
+
   getSidebarBadges: () =>
     apiClient.get("/food/admin/sidebar-badges", { contextModule: "admin" }),
   login: (email, password) => authService.adminLogin(email, password),
@@ -1962,6 +1970,8 @@ const getDeliveryMeOnce = () => {
 export const deliveryAPI = {
   deleteAccount: () => apiClient.delete('/food/delivery/profile/account', { contextModule: 'delivery' }),
   getWallet: () => apiClient.get('/food/delivery/wallet', { contextModule: 'delivery' }),
+  getEarnings: (params = {}) => apiClient.get('/food/delivery/earnings', { params, contextModule: 'delivery' }),
+  getTripHistory: (params = {}) => apiClient.get('/food/delivery/trip-history', { params, contextModule: 'delivery' }),
   sendOTP: (phone, _purpose = "login") => {
     if (!phone) return Promise.reject(new Error("Phone is required"));
     return authService.requestDeliveryOtp(phone);

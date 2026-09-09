@@ -1,0 +1,369 @@
+═════════════════════════════════════════════════════════════════
+                    FOODISS — ALL PANEL ROUTES
+═════════════════════════════════════════════════════════════════
+
+Localhost Base URL: http://localhost:5173
+
+───────────────────────────────────────────────────────────────────
+                     1. ADMIN PANEL (/admin/*)
+───────────────────────────────────────────────────────────────────
+
+Auth Pages:
+  /admin/login                              Login
+  /admin/signup                             Signup
+  /admin/forgot-password                    Forgot Password
+
+Dashboard & Core:
+  /admin/food                               Dashboard
+  /admin/food/point-of-sale                 Point of Sale
+  /admin/food/profile                       Admin Profile
+  /admin/food/settings                      Admin Settings
+
+Order Management:
+  /admin/food/orders/all                    All Orders
+  /admin/food/orders/pending                Pending Orders
+  /admin/food/orders/processing             Processing Orders
+  /admin/food/orders/food-on-the-way        Food On The Way
+  /admin/food/orders/delivered              Delivered
+  /admin/food/orders/canceled               Cancelled
+  /admin/food/orders/restaurant-cancelled   Restaurant Cancelled
+  /admin/food/orders/payment-failed         Payment Failed
+  /admin/food/orders/refunded               Refunded
+  /admin/food/orders/offline-payments       Offline Payments
+  /admin/food/orders/user-carts             User Carts
+  /admin/food/order-detect-delivery         Order Detect Delivery
+  /admin/food/order-refunds/new             New Refund Requests
+
+Restaurant Management:
+  /admin/food/restaurants                   Restaurants List
+  /admin/food/restaurants/add               Add Restaurant
+  /admin/food/restaurants/edit/:id          Edit Restaurant
+  /admin/food/restaurants/joining-request   Joining Requests
+  /admin/food/restaurants/unregistered      Unregistered Restaurants
+  /admin/food/restaurants/commission        Commission
+  /admin/food/restaurants/complaints        Complaints
+  /admin/food/restaurants/reviews           Reviews
+  /admin/food/restaurants/bulk-import       Bulk Import
+  /admin/food/restaurants/bulk-export       Bulk Export
+  /admin/food/restaurants/settings          Restaurant Settings
+
+Food & Category Management:
+  /admin/food/foods                         Foods List
+  /admin/food/food/list                     Foods List (alias)
+  /admin/food/categories                    Categories
+  /admin/food/addons                        Addons
+  /admin/food/fee-settings                  Delivery & Platform Fee
+  /admin/food/delivery-zone-surge           Zone Delivery Surge
+  /admin/food/referral-settings             Referral Settings
+  /admin/food/food-approval                 Food Approval
+
+Promotions & Marketing:
+  /admin/food/campaigns/basic               Basic Campaign
+  /admin/food/campaigns/food                Food Campaign
+  /admin/food/coupons                       Coupons & Offers
+  /admin/food/cashback                      Cashback
+  /admin/food/banners                       Banners
+  /admin/food/promotional-banner            Promotional Banner
+  /admin/food/advertisement                 Ads List
+  /admin/food/advertisement/new             New Advertisement
+  /admin/food/advertisement/requests        Ad Requests
+
+Zone Management:
+  /admin/food/zone-setup                    Zone Setup
+  /admin/food/zone-setup/map                All Zones Map
+  /admin/food/zone-setup/delivery-boy-view  Delivery Boy View Map
+  /admin/food/zone-setup/add                Add Zone
+  /admin/food/zone-setup/edit/:id           Edit Zone
+  /admin/food/zone-setup/view/:id           View Zone
+
+Delivery Man Management:
+  /admin/food/delivery-partners             Delivery Partners List
+  /admin/food/delivery-partners/add         Add Deliveryman
+  /admin/food/delivery-partners/live-tracking  Live Tracking
+  /admin/food/delivery-partners/join-request   Join Request
+  /admin/food/delivery-partners/reviews     Reviews
+  /admin/food/delivery-partners/bonus       Bonus
+  /admin/food/delivery-partners/earning-addon      Earning Addon
+  /admin/food/delivery-partners/earning-addon-history  Earning Addon History
+  /admin/food/delivery-partners/earnings    Earnings
+  /admin/food/delivery-boy-commission       Delivery Boy Commission
+  /admin/food/delivery-cash-limit           Delivery Cash Limit
+  /admin/food/cash-limit-settlement         Cash Limit Settlement
+  /admin/food/delivery-withdrawal           Delivery Withdrawal
+  /admin/food/delivery-boy-wallet           Delivery Boy Wallet
+  /admin/food/delivery-emergency-help       Emergency Help
+  /admin/food/delivery-support-tickets      Delivery Support Tickets
+  /admin/food/delivery-order-reassignment-requests  Order Reassignment
+
+Customers & Support:
+  /admin/food/customers                     Customers List
+  /admin/food/chattings                     Chattings
+  /admin/food/contact-messages              Contact Messages
+  /admin/food/safety-emergency-reports      Safety Emergency Reports
+  /admin/food/support-tickets               Support Tickets
+  /admin/food/wallet/add-fund               Add Fund
+  /admin/food/wallet/bonus                  Bonus
+  /admin/food/loyalty-point/report          Loyalty Point Report
+  /admin/food/subscribed-mail-list          Subscribed Mail List
+
+Reports & Finance:
+  /admin/food/transaction-report            Transaction Report
+  /admin/food/expense-report                Expense Report
+  /admin/food/disbursement-report/restaurants    Disbursement (Restaurants)
+  /admin/food/disbursement-report/deliverymen   Disbursement (Deliverymen)
+  /admin/food/order-report/regular          Regular Order Report
+  /admin/food/order-report/campaign         Campaign Order Report
+  /admin/food/restaurant-report             Restaurant Report
+  /admin/food/customer-report/feedback-experience  Feedback Report
+  /admin/food/tax-report                    Tax Report
+  /admin/food/restaurant-vat-report         Restaurant VAT Report
+  /admin/food/restaurant-withdraws          Restaurant Withdraws
+  /admin/food/withdraw-method               Withdraw Method
+
+Employee & System Settings:
+  /admin/food/employee-role                 Employee Role
+  /admin/food/employees                     Employees List
+  /admin/food/employees/add                 Add Employee
+  /admin/food/business-setup                Business Setup
+  /admin/food/feature-settings              Feature Settings
+  /admin/food/power-scanning                Power Scanning
+  /admin/food/email-template                Email Template
+  /admin/food/theme-settings                Theme Settings
+  /admin/food/gallery                       Gallery
+  /admin/food/login-setup                   Login Setup
+
+CMS & Pages:
+  /admin/food/pages-social-media/terms      Terms & Conditions
+  /admin/food/pages-social-media/privacy    Privacy Policy
+  /admin/food/pages-social-media/support    Support
+  /admin/food/pages-social-media/about      About Us
+  /admin/food/pages-social-media/refund     Refund Policy
+  /admin/food/pages-social-media/shipping   Shipping Policy
+  /admin/food/pages-social-media/cancellation  Cancellation Policy
+  /admin/food/pages-social-media/react-registration  React Registration
+
+3rd Party & Notifications:
+  /admin/food/3rd-party-configurations/firebase     Firebase Config
+  /admin/food/3rd-party-configurations/offline-payment  Offline Payment
+  /admin/food/3rd-party-configurations/join-us      Join Us
+  /admin/food/3rd-party-configurations/analytics    Analytics
+  /admin/food/3rd-party-configurations/ai           AI Setup
+  /admin/food/app-web-settings              App & Web Settings
+  /admin/food/notifications                 Notifications
+  /admin/food/broadcast-notification        Broadcast Notification
+  /admin/food/notification-channels         Notification Channels
+  /admin/food/landing-page-settings/admin   Landing Page (Admin)
+  /admin/food/landing-page-settings/react   Landing Page (React)
+  /admin/food/page-meta-data                Page Meta Data
+  /admin/food/react-site                    React Site Settings
+  /admin/food/clean-database                Clean Database
+  /admin/food/addon-activation              Addon Activation
+  /admin/food/hero-banner-management        Hero Banner Management
+
+
+───────────────────────────────────────────────────────────────────
+                   2. USER PANEL (/food/user/*)
+───────────────────────────────────────────────────────────────────
+
+Auth:
+  /food/user/auth/login                     Login / Sign-In
+  /food/user/auth/otp                       OTP Verification
+  /food/user/auth/callback                  OAuth Callback
+
+Home & Discovery:
+  /food/user                                Home
+  /food/user/categories                     Categories
+  /food/user/category/:category             Category Page
+  /food/user/restaurants                    Restaurants List
+  /food/user/restaurants/:slug              Restaurant Details
+  /food/user/search                         Search
+  /food/user/product/:id                    Product Detail
+  /food/user/under-250                      Under 250 (Switch 99)
+
+Dining:
+  /food/user/dining                         Dining Landing
+  /food/user/dining/restaurants             Dining Restaurants
+  /food/user/dining/:category               Dining by Category
+  /food/user/dining/explore/upto50          Explore Under 50
+  /food/user/dining/explore/near-rated      Explore Near/Rated
+  /food/user/dining/coffee                  Coffee
+  /food/user/dining/:diningType/:slug       Dining Restaurant Details
+  /food/user/dining/book/:slug              Table Booking
+  /food/user/dining/book-confirmation       Booking Confirmation
+  /food/user/dining/book-success            Booking Success
+  /food/user/bookings                       My Bookings (Protected)
+
+Cart:
+  /food/user/cart                           Cart
+  /food/user/cart/select-address            Select Address
+  /food/user/cart/address-selector          Address Selector
+
+Orders:
+  /food/user/orders                         My Orders
+  /food/user/orders/:orderId                Order Tracking
+  /food/user/orders/:orderId/invoice        Invoice
+  /food/user/orders/:orderId/details        Order Details
+
+Offers & Collections:
+  /food/user/offers                         Offers
+  /food/user/gourmet                        Gourmet
+  /food/user/collections                    Collections
+  /food/user/collections/:id                Collection Detail
+
+Profile:
+  /food/user/profile                        Profile
+  /food/user/profile/edit                   Edit Profile
+  /food/user/profile/payments               Payments
+  /food/user/profile/payments/new           Add Payment
+  /food/user/profile/payments/:id/edit      Edit Payment
+  /food/user/profile/favorites              Favorites
+  /food/user/profile/coupons                Wallet/Coupons
+  /food/user/profile/refer-earn             Refer & Earn
+  /food/user/profile/support                Support
+  /food/user/profile/about                  About
+  /food/user/profile/accessibility          Accessibility
+  /food/user/profile/report-safety-emergency  Report Emergency
+  /food/user/profile/logout                 Logout
+
+Legal Pages:
+  /food/user/profile/terms                  Terms
+  /food/user/profile/privacy                Privacy
+  /food/user/profile/help-content           Help Content
+  /food/user/profile/refund                 Refund Policy
+  /food/user/profile/shipping               Shipping Policy
+  /food/user/profile/cancellation           Cancellation Policy
+
+Other:
+  /food/user/wallet                         Wallet
+  /food/user/notifications                  Notifications
+  /food/user/help                           Help
+  /food/user/help/orders/:orderId           Order Help
+  /food/user/complaints/submit/:orderId     Submit Complaint
+
+
+───────────────────────────────────────────────────────────────────
+               3. RESTAURANT PANEL (/food/restaurant/*)
+───────────────────────────────────────────────────────────────────
+
+Auth:
+  /food/restaurant/welcome                  Welcome
+  /food/restaurant/login                    Login
+  /food/restaurant/signup                   Signup
+  /food/restaurant/otp                      OTP Verification
+  /food/restaurant/forgot-password          Forgot Password
+  /food/restaurant/pending-verification     Pending Verification
+  /food/restaurant/onboarding               Onboarding
+  /food/restaurant/signup-email             Signup with Email
+  /food/restaurant/auth/google-callback     Google OAuth Callback
+
+Orders:
+  /food/restaurant                          Live Orders (Home)
+  /food/restaurant/orders/all               Order History
+  /food/restaurant/orders/:id               Order Detail
+
+Menu & Inventory:
+  /food/restaurant/menu-categories          Menu Categories
+  /food/restaurant/inventory                Inventory
+  /food/restaurant/hub-menu/item/:id        Item Details
+
+Coupons:
+  /food/restaurant/coupon                   Coupons List
+  /food/restaurant/coupon/new               Add Coupon
+  /food/restaurant/coupon/:id/edit          Edit Coupon
+
+Restaurant Settings:
+  /food/restaurant/delivery-settings        Delivery Settings
+  /food/restaurant/rush-hour                Rush Hour
+  /food/restaurant/outlet-timings           Outlet Timings
+  /food/restaurant/outlet-timings/:day      Day Slots
+  /food/restaurant/outlet-info              Outlet Info
+  /food/restaurant/status                   Operational Status
+  /food/restaurant/edit-cuisines            Edit Cuisines
+  /food/restaurant/edit-address             Edit Address
+  /food/restaurant/edit-owner               Edit Owner
+  /food/restaurant/manage-outlets           Manage Outlets
+  /food/restaurant/update-bank-details      Bank Details
+  /food/restaurant/phone                    Phone Numbers
+  /food/restaurant/zone-setup               Zone Setup
+
+Ratings & Feedback:
+  /food/restaurant/ratings-reviews          Ratings & Reviews
+  /food/restaurant/dish-ratings             Dish Ratings
+  /food/restaurant/feedback                 Feedback
+  /food/restaurant/share-feedback           Share Feedback
+
+Finance:
+  /food/restaurant/hub-finance              Finance/Payouts
+  /food/restaurant/withdrawal-history       Withdrawal History
+  /food/restaurant/finance-details          Finance Details
+  /food/restaurant/download-report          Download Report
+
+Compliance:
+  /food/restaurant/fssai                    FSSAI Details
+  /food/restaurant/fssai/update             FSSAI Update
+  /food/restaurant/reservations             Dining Reservations
+  /food/restaurant/hyperpure                Hyperpure
+  /food/restaurant/explore                  Explore More
+
+Other:
+  /food/restaurant/notifications            Notifications
+  /food/restaurant/help-centre/support      Support
+  /food/restaurant/privacy                  Privacy Policy
+  /food/restaurant/terms                    Terms & Conditions
+  /food/restaurant/help-content             Help Content
+
+
+───────────────────────────────────────────────────────────────────
+               4. DELIVERY/DRIVER PANEL (/food/delivery/*)
+───────────────────────────────────────────────────────────────────
+
+Auth:
+  /food/delivery/welcome                    Welcome
+  /food/delivery/login                      Login
+  /food/delivery/otp                        OTP Verification
+  /food/delivery/signup                     Signup (redirect to login)
+  /food/delivery/signup/details             Signup Step 1 - Details
+  /food/delivery/signup/documents           Signup Step 2 - Documents
+  /food/delivery/terms                      Terms & Conditions
+
+Core Tabs:
+  /food/delivery                            Feed (Home)
+  /food/delivery/feed                       Feed Tab
+  /food/delivery/pocket                     Pocket/Earnings
+  /food/delivery/history                    Trip History
+  /food/delivery/profile                    Profile
+  /food/delivery/notifications              Notifications
+
+Pocket / Financial:
+  /food/delivery/pocket/payout              Payout
+  /food/delivery/pocket/statement           Statement
+  /food/delivery/pocket/deductions          Deductions
+  /food/delivery/pocket/limit-settlement    Limit Settlement
+  /food/delivery/pocket/balance             Balance
+  /food/delivery/pocket/cash-limit          Cash Limit
+  /food/delivery/pocket/details             Pocket Details
+
+Profile:
+  /food/delivery/profile/details            Profile Details
+  /food/delivery/profile/bank               Bank Details
+  /food/delivery/profile/documents          Documents
+  /food/delivery/profile/terms              Terms
+  /food/delivery/profile/privacy            Privacy
+
+Support & Help:
+  /food/delivery/help/tickets               Support Tickets
+  /food/delivery/help/tickets/create        Create Ticket
+  /food/delivery/help/tickets/:ticketId     View Ticket
+  /food/delivery/help/id-card               ID Card
+  /food/delivery/help/order-emergency       Emergency
+  /food/delivery/help/content               Help Content
+
+
+───────────────────────────────────────────────────────────────────
+                     QUICK LOGIN URLs
+───────────────────────────────────────────────────────────────────
+
+Admin:       http://localhost:5173/admin/login
+User:        http://localhost:5173/food/user/auth/login
+Restaurant:  http://localhost:5173/food/restaurant/login
+Delivery:    http://localhost:5173/food/delivery/login

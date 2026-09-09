@@ -152,6 +152,11 @@ export function buildDisplayAddressText({
     Number.isFinite(Number(effectiveLocation?.latitude)) &&
     Number.isFinite(Number(effectiveLocation?.longitude))
 
-  if (loading || hasCoords) return "Detecting location..."
+  if (loading) return "Detecting location..."
+  if (hasCoords) {
+    const lat = Number(effectiveLocation.latitude).toFixed(3)
+    const lng = Number(effectiveLocation.longitude).toFixed(3)
+    return `${lat}, ${lng}`
+  }
   return "Select Location"
 }

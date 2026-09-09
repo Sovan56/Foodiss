@@ -1,0 +1,43 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main # Triggers on pushes to the main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            # Navigate to the cloned repository
+            cd ~/Foodiss
+
+            # Pull latest changes
+            git reset --hard
+            git pull origin main
+
+            # Update Backend
+            echo "Updating Backend..."
+            cd Backend
+            npm install
+            pm2 restart foodiss-backend
+
+            # Update Frontend
+            echo "Updating Frontend..."
+            cd ../Frontend
+            npm install
+            npm run build
+
+            # Move new build to Nginx serving directory
+            sudo rm -rf /var/www/foodiss/*
+            sudo cp -r dist/* /var/www/foodiss/
+
+            echo "Deployment successful!"

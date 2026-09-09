@@ -122,17 +122,25 @@ async function listNearbyOnlineDeliveryPartners(
   const STALE_GPS_MS = 10 * 60 * 1000;
 
   for (const p of allOnline) {
-    if (!allowedStatuses.includes(p.status)) continue;
+    if (!allowedStatuses.includes(p.status)) {
+      logger.info(`[DispatchDebug] Partner ${p._id} (${p.name}) status='${p.status}' not in ${JSON.stringify(allowedStatuses)} -> SKIP`);
+      continue;
+    }
 
     const isStale = !p.lastLocationAt || (Date.now() - new Date(p.lastLocationAt).getTime()) > STALE_GPS_MS;
     // Skip missing/stale GPS — including them as distanceKm:999 leaked offers across cities.
     if (p.lastLat == null || p.lastLng == null || isStale) {
+      logger.info(
+        `[DispatchDebug] Partner ${p._id} (${p.name}) SKIP: lastLat=${p.lastLat} lastLng=${p.lastLng} isStale=${isStale} lastLocationAt=${p.lastLocationAt || 'none'}`,
+      );
       continue;
     }
 
     const d = haversineKm(rLat, rLng, p.lastLat, p.lastLng);
     if (Number.isFinite(d) && d <= maxKm) {
       scored.push({ partnerId: p._id, distanceKm: d, status: p.status });
+    } else {
+      logger.info(`[DispatchDebug] Partner ${p._id} (${p.name}) distance=${d}km > ${maxKm}km -> SKIP`);
     }
   }
 

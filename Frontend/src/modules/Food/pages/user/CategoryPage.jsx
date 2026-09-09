@@ -945,7 +945,7 @@ export default function CategoryPage() {
                     ) : cat.image ? (
                       <div className={`w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden border-2 transition-all ${isSelected ? 'border-[#EB590E] shadow-lg' : 'border-transparent'
                         }`}>
-                        <img
+                        <img loading="lazy" decoding="async"
                           src={cat.image}
                           alt={cat.name}
                           className="w-full h-full object-cover"
@@ -1084,7 +1084,7 @@ export default function CategoryPage() {
                         <div className="relative aspect-square rounded-xl md:rounded-2xl overflow-hidden mb-2">
                           {/* Use category dish image if available, otherwise restaurant image */}
                           {restaurant.categoryDishImage ? (
-                            <img
+                            <img loading="lazy" decoding="async"
                               src={restaurant.categoryDishImage}
                               alt={restaurant.categoryDishName || restaurant.name}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -1103,7 +1103,7 @@ export default function CategoryPage() {
                               }}
                             />
                           ) : restaurant.image ? (
-                            <img
+                            <img loading="lazy" decoding="async"
                               src={restaurant.image}
                               alt={restaurant.name}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -1193,7 +1193,7 @@ export default function CategoryPage() {
                       <div className="relative h-44 sm:h-52 md:h-60 lg:h-64 xl:h-72 w-full overflow-hidden rounded-t-md flex-shrink-0">
                         {/* Use category dish image if available, otherwise restaurant image */}
                         {restaurant.categoryDishImage ? (
-                          <img
+                          <img loading="lazy" decoding="async"
                             src={restaurant.categoryDishImage}
                             alt={restaurant.categoryDishName || restaurant.name}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -1212,7 +1212,7 @@ export default function CategoryPage() {
                             }}
                           />
                         ) : restaurant.image ? (
-                          <img
+                          <img loading="lazy" decoding="async"
                             src={restaurant.image}
                             alt={restaurant.name}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

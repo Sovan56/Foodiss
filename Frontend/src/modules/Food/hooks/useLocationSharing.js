@@ -39,7 +39,7 @@ export const useLocationSharing = (orderId, enabled = false) => {
     }
 
     let lastSentTime = 0;
-    const LOCATION_UPDATE_INTERVAL = 3000;
+    const LOCATION_UPDATE_INTERVAL = 5000;
     const lastLocationRef = { lat: null, lng: null };
 
     if (!navigator.geolocation) return;
@@ -58,7 +58,7 @@ export const useLocationSharing = (orderId, enabled = false) => {
             latitude,
             longitude
           );
-          if (distance < 5) return;
+          if (distance < 2) return;
         }
 
         lastLocationRef.lat = latitude;

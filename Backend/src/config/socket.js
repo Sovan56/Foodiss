@@ -32,7 +32,8 @@ const roomNames = {
     restaurant: (id) => `restaurant:${String(id)}`,
     user: (id) => `user:${String(id)}`,
     delivery: (id) => `delivery:${String(id)}`,
-    tracking: (orderId) => `tracking:${String(orderId)}`
+    tracking: (orderId) => `tracking:${String(orderId)}`,
+    admin: () => 'admin:orders'
 };
 
 /**
@@ -127,7 +128,24 @@ export const initSocket = async (server) => {
                     room: roomNames.delivery(userId),
                 });
             }
+            if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
+                socket.join(roomNames.admin());
+                logger.info(`[AdminSocket] Auto-joined admin orders room for ${role}:${userId} (socket ${socket.id})`);
+            }
         }
+
+        // Explicit join (used by admin order dashboard).
+        socket.on('join-admin-orders', () => {
+            const currentRole = socket.user?.role;
+            if (currentRole !== 'ADMIN' && currentRole !== 'SUPER_ADMIN') {
+                logger.warn(`Rejected join-admin-orders for non-admin socket ${socket.id} (role: ${currentRole})`);
+                return;
+            }
+            const room = roomNames.admin();
+            socket.join(room);
+            logger.info(`[AdminSocket] Socket ${socket.id} joined admin room ${room}`);
+            socket.emit('admin-orders-joined', { room, adminId: String(userId || '') });
+        });
 
         // Explicit join (used by existing restaurant client hook).
         socket.on('join-restaurant', (restaurantId) => {

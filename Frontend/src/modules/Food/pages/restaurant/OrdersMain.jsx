@@ -33,12 +33,7 @@ import NewOrderAcceptCard from "@food/components/restaurant/NewOrderAcceptCard";
 import { restaurantAPI, diningAPI } from "@food/api";
 import { useRestaurantNotifications } from "@food/hooks/useRestaurantNotifications";
 import ResendNotificationButton from "@food/components/restaurant/ResendNotificationButton";
-import {
-  getRestaurantOrderAlertKey,
-  setRestaurantAlertMuted,
-  stopRestaurantAlert,
-  unlockRestaurantAlertAudio,
-} from "@food/utils/restaurantAlertSession";
+import { getOrderAlertKey, setAlertMuted, stopAlert, stopAllAlerts, unlockAlertAudio } from "@food/utils/audioSessionManager";
 const debugLog = (...args) => { };
 const debugWarn = (...args) => { };
 const debugError = (...args) => { };
@@ -73,7 +68,7 @@ const getQueuedOrderKeys = (orderLike = {}) =>
     orderLike?.orderId,
     orderLike?._id,
     orderLike?.id,
-    getRestaurantOrderAlertKey(orderLike),
+    getOrderAlertKey(orderLike),
   ]
     .map((v) => (v == null ? "" : String(v).trim()))
     .filter(Boolean);
@@ -1327,7 +1322,7 @@ export default function OrdersMain() {
         status,
       );
       removeQueuedOrder(matching);
-      stopRestaurantAlert(matching);
+      stopAlert(matching);
       clearNewOrder(matching);
 
       if (status?.includes("cancelled") || status?.includes("rejected")) {
@@ -1370,7 +1365,7 @@ export default function OrdersMain() {
   // Unlock shared restaurant alert audio on first gesture (session owns playback).
   useEffect(() => {
     const unlockAudio = () => {
-      void unlockRestaurantAlertAudio();
+      void unlockAlertAudio();
     };
 
     window.addEventListener("pointerdown", unlockAudio, {
@@ -1408,7 +1403,7 @@ export default function OrdersMain() {
 
               if (!stillNew) {
                 unmarkOrderAsQueued(queued);
-                stopRestaurantAlert(queued);
+                stopAlert(queued);
                 return false;
               }
               return true;
@@ -1494,7 +1489,7 @@ export default function OrdersMain() {
 
   // Keep mute preference in sync with the shared alert session (no second Audio player).
   useEffect(() => {
-    setRestaurantAlertMuted(isMuted);
+    setAlertMuted(isMuted);
   }, [isMuted]);
 
   // Handle accept order from New Orders card
@@ -1503,12 +1498,23 @@ export default function OrdersMain() {
       throw new Error("Missing order id");
     }
 
+    // Immediately silence ringing on accept click
+    try {
+      stopAlert(orderToAccept);
+      if (pendingNewOrders.length <= 1) {
+        stopAllAlerts();
+      }
+    } catch {}
+
     try {
       const orderId = orderToAccept.orderMongoId || orderToAccept.orderId;
       await restaurantAPI.acceptOrder(orderId, prepTime);
       debugLog("? Order accepted:", orderId);
       toast.success("Order accepted successfully");
-      stopRestaurantAlert(orderToAccept);
+      stopAlert(orderToAccept);
+      if (pendingNewOrders.length <= 1) {
+        stopAllAlerts();
+      }
       removeQueuedOrder(orderToAccept);
       clearNewOrder(orderToAccept);
       sharedOrdersResponse = null;
@@ -1538,12 +1544,26 @@ export default function OrdersMain() {
   };
 
   const handleRejectQueuedClick = (order) => {
+    // Immediately silence ringing as soon as Decline is clicked
+    try {
+      stopAlert(order);
+      if (pendingNewOrders.length <= 1) {
+        stopAllAlerts();
+      }
+    } catch {}
     setOrderToReject(order);
     setShowRejectPopup(true);
   };
 
   const handleRejectConfirm = async () => {
     if (!rejectReason || !orderToReject) return;
+
+    try {
+      stopAlert(orderToReject);
+      if (pendingNewOrders.length <= 1) {
+        stopAllAlerts();
+      }
+    } catch {}
 
     if (orderToReject?.orderMongoId || orderToReject?.orderId) {
       try {
@@ -1558,7 +1578,10 @@ export default function OrdersMain() {
       }
     }
 
-    stopRestaurantAlert(orderToReject);
+    stopAlert(orderToReject);
+    if (pendingNewOrders.length <= 1) {
+      stopAllAlerts();
+    }
     removeQueuedOrder(orderToReject);
     clearNewOrder(orderToReject);
     setShowRejectPopup(false);
@@ -1700,7 +1723,7 @@ export default function OrdersMain() {
   const toggleMute = () => {
     setIsMuted((prev) => {
       const next = !prev;
-      setRestaurantAlertMuted(next);
+      setAlertMuted(next);
       return next;
     });
   };
@@ -1840,7 +1863,7 @@ export default function OrdersMain() {
                       order.orderMongoId ||
                       order.orderId ||
                       order._id ||
-                      getRestaurantOrderAlertKey(order)
+                      getOrderAlertKey(order)
                     }
                     order={order}
                     isMuted={isMuted}

@@ -191,15 +191,9 @@ export default function DesktopNavbar({ showLogo = true }) {
                             <Button
                                 variant="ghost"
                                 onClick={handleLocationClick}
-                                disabled={locationLoading}
-                                className="h-auto px-0 py-0 hover:bg-transparent transition-colors flex-shrink-0"
+                                className="h-auto px-0 py-0 hover:bg-transparent transition-colors flex-shrink-0 cursor-pointer"
                             >
-                                {locationLoading ? (
-                                    <span className="text-sm font-bold text-black dark:text-white">
-                                        Loading...
-                                    </span>
-                                ) : (
-                                    <div className="flex flex-col items-start min-w-0">
+                                <div className="flex flex-col items-start min-w-0">
                                         <div className="flex items-center gap-1.5 lg:gap-2">
                                             <FaLocationDot
                                                 className="h-5 w-5 lg:h-6 lg:w-6 text-black dark:text-white flex-shrink-0"
@@ -217,7 +211,6 @@ export default function DesktopNavbar({ showLogo = true }) {
                                             </span>
                                         )}
                                     </div>
-                                )}
                             </Button>
                         </div>
 

@@ -903,12 +903,24 @@ export default function OrdersPage({ statusKey = "all" }) {
     socket.on("disconnect", () => {
       socketConnectedRef.current = false
     })
+    const handleOrderStatusUpdate = () => {
+      fetchOrdersRef.current({ silent: true, withRingCheck: false, force: true })
+    }
+
     socket.on("admin_new_order", handleIncomingRealtimeOrder)
+    socket.on("order_status_update", handleOrderStatusUpdate)
     socket.on("play_notification_sound", handleIncomingRealtimeOrder)
+
+    // Background reconciliation polling (25s interval)
+    const backgroundPollTimer = setInterval(() => {
+      fetchOrdersRef.current({ silent: true, withRingCheck: false, force: true })
+    }, 25000)
 
     return () => {
       socketConnectedRef.current = false
+      clearInterval(backgroundPollTimer)
       socket.off("admin_new_order", handleIncomingRealtimeOrder)
+      socket.off("order_status_update", handleOrderStatusUpdate)
       socket.off("play_notification_sound", handleIncomingRealtimeOrder)
       socket.disconnect()
       socketRef.current = null

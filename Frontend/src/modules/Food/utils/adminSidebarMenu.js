@@ -135,6 +135,7 @@ export const adminSidebarMenu = [
     type: "section",
     label: "DELIVERYMAN MANAGEMENT",
     items: [
+      { type: "link", label: "Delivery Incentives & Rain", path: "/admin/food/delivery-incentives", icon: "CloudRain" },
       { type: "link", label: "Delivery & Platform Fee", path: "/admin/food/fee-settings", icon: "DollarSign" },
       { type: "link", label: "Zone Delivery Surge", path: "/admin/food/delivery-zone-surge", icon: "Zap" },
       { type: "link", label: "Delivery Cash Limit", path: "/admin/food/delivery-cash-limit", icon: "IndianRupee" },

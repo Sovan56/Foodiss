@@ -1,5 +1,6 @@
 import { useDeliveryStore } from '@/modules/DeliveryV2/store/useDeliveryStore';
 import { resolveCustomerAddress } from '@/modules/DeliveryV2/utils/orderAddress';
+import { stopAllAlerts } from '@food/utils/audioSessionManager';
 import { deliveryAPI } from '@food/api';
 import { toast } from 'sonner';
 
@@ -21,6 +22,7 @@ export const useOrderManager = () => {
   } = useDeliveryStore();
 
   const acceptOrder = async (order) => {
+    stopAllAlerts();
     const orderId = canonicalOrderId(order);
     if (!orderId) {
       toast.error('Invalid order data');

@@ -36,7 +36,7 @@ import { useLocation as useUserLocation } from "@food/hooks/useLocation"
 import DeliveryTrackingMap from "@food/components/user/DeliveryTrackingMap"
 import { orderAPI, restaurantAPI } from "@food/api"
 import { useCompanyName } from "@food/hooks/useCompanyName"
-import { useUserNotifications } from "@food/hooks/useUserNotifications"
+// Hook removed to avoid duplicate socket connections
 import circleIcon from "@food/assets/circleicon.png"
 import { RESTAURANT_PIN_SVG, CUSTOMER_PIN_SVG, RIDER_BIKE_SVG } from "@food/constants/mapIcons"
 
@@ -444,7 +444,8 @@ export default function OrderTracking() {
   const { profile, getDefaultAddress } = useProfile()
   const { location: userLiveLocation } = useUserLocation()
 
-  const { isConnected: isSocketConnected } = useUserNotifications()
+  // Socket connection is now managed globally by UserLayout to avoid duplicate toast notifications
+  const isSocketConnected = typeof window !== 'undefined' ? window.orderSocketConnected : false
 
   // State for order data
   const [order, setOrder] = useState(null)
@@ -603,9 +604,12 @@ export default function OrderTracking() {
       let lastError = null
       for (const id of lookupIds) {
         try {
-          // Double guard against hammer
-          return await orderAPI.getOrderDetails(id, options)
+          console.log('[DEBUG] Calling getOrderDetails for', id)
+          const res = await orderAPI.getOrderDetails(id, options)
+          console.log('[DEBUG] getOrderDetails success for', id)
+          return res
         } catch (err) {
+          console.error('[DEBUG] getOrderDetails failed for', id, err?.message)
           lastError = err
           if (err?.response?.status === 400 || err?.response?.status === 404) continue
           throw err
@@ -836,7 +840,6 @@ export default function OrderTracking() {
       if (terminalPollStopRef.current && !isInitial) return;
 
       const now = Date.now();
-      if (isInitial && now - lastPollExecutionRef.current < 1000) return;
       if (isInitial) lastPollExecutionRef.current = now;
 
       // Check context immediately to avoid loaders if data exists locally
@@ -880,9 +883,11 @@ export default function OrderTracking() {
         }
       } catch (err) {
         if (isInitial && !order) {
+          console.log('[DEBUG] Falling back to resolveOrderFromList for', orderId)
           try {
             const matchedOrder = await resolveOrderFromList(orderId);
             if (matchedOrder) {
+              console.log('[DEBUG] resolveOrderFromList found matchedOrder')
               if (!isSubscribed) return;
               setOrder(prev => transformOrderForTracking(matchedOrder, prev));
               setError(null);
@@ -903,10 +908,8 @@ export default function OrderTracking() {
     pollRef.current = poll;
     terminalPollStopRef.current = false;
 
-    if (isInitialPollRequestedRef.current !== orderId) {
-      isInitialPollRequestedRef.current = orderId;
-      poll(true);
-    }
+    // Initial fetch
+    poll(true);
 
     return () => {
       isSubscribed = false;
@@ -939,7 +942,7 @@ export default function OrderTracking() {
   // Post-checkout splash only — real status comes from API / poll / socket.
   useEffect(() => {
     if (!confirmed) return
-    const timer1 = setTimeout(() => setShowConfirmation(false), 3000)
+    const timer1 = setTimeout(() => setShowConfirmation(false), 1500)
     return () => clearTimeout(timer1)
   }, [confirmed])
 

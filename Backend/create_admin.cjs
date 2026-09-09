@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+require('dotenv').config();
 
-const MONGODB_URI = 'mongodb+srv://SwitchEats:Switcheats%40123@switcheatscluster.gcdsjg0.mongodb.net/switcheatsdb?retryWrites=true&w=majority';
+const MONGODB_URI = process.env.MONGODB_URI;
 
 async function createAdmin() {
   try {
@@ -17,9 +18,9 @@ async function createAdmin() {
       const newHash = await bcrypt.hash('admin123', 10);
       await adminCollection.updateOne(
         { email: 'admin@switcheats.com' }, 
-        { $set: { password: newHash } }
+        { $set: { password: newHash, adminType: 'super_admin' } }
       );
-      console.log('Updated existing admin password to: admin123');
+      console.log('Updated existing admin password to: admin123 and set adminType to super_admin');
     } else {
       const hash = await bcrypt.hash('admin123', 10);
       await adminCollection.insertOne({
@@ -31,6 +32,7 @@ async function createAdmin() {
         fcmTokens: [],
         fcmTokenMobile: [],
         role: 'ADMIN',
+        adminType: 'super_admin',
         isActive: true,
         servicesAccess: ['food', 'quickCommerce', 'taxi'],
         createdAt: new Date(),

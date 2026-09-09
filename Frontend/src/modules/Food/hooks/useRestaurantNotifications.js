@@ -4,13 +4,13 @@ import { API_BASE_URL } from '@food/api/config';
 import { restaurantAPI } from '@food/api';
 import { dispatchNotificationInboxRefresh } from '@food/hooks/useNotificationInbox';
 import {
-  attachRestaurantAlertUnlockListeners,
-  getRestaurantOrderAlertKey,
-  startRestaurantAlert,
-  stopAllRestaurantAlerts,
-  stopRestaurantAlert,
-  syncRestaurantAlertsWithOrders,
-} from '@food/utils/restaurantAlertSession';
+  attachAlertUnlockListeners,
+  getOrderAlertKey,
+  startAlert,
+  stopAllAlerts,
+  stopAlert,
+  syncAlertsWithOrders,
+} from '@food/utils/audioSessionManager';
 
 const debugLog = (...args) => {}
 const debugWarn = (...args) => {}
@@ -56,8 +56,6 @@ export const useRestaurantNotifications = () => {
   const ALERT_DEDUPE_MS = 15000;
   const BROWSER_NOTIFICATION_DEDUPE_MS = 20000;
   const NOTIFICATION_PERMISSION_ASKED_KEY = 'restaurant_notification_permission_asked';
-
-  const getOrderAlertKey = (orderData = {}) => getRestaurantOrderAlertKey(orderData);
 
   const shouldProcessOrderAlert = (orderData = {}) => {
     const key = getOrderAlertKey(orderData);
@@ -123,18 +121,18 @@ export const useRestaurantNotifications = () => {
   };
 
   const playNotificationSound = async (orderData = {}) => {
-    await startRestaurantAlert(orderData || activeOrderRef.current || {});
+    await startAlert(orderData || activeOrderRef.current || {}, 'restaurant');
   };
 
   const handleIncomingOrderAlert = (orderData) => {
     if (!shouldProcessOrderAlert(orderData)) {
       // Still ensure session knows about this pending id (idempotent sound).
-      void startRestaurantAlert(orderData);
+      void startAlert(orderData, 'restaurant');
       return;
     }
 
     activeOrderRef.current = orderData || { id: Date.now() };
-    void startRestaurantAlert(orderData);
+    void startAlert(orderData, 'restaurant');
 
     if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
       showBackgroundOrderNotification(orderData);
@@ -192,10 +190,10 @@ export const useRestaurantNotifications = () => {
         if (confirmed.length > 0) {
           // Trigger alerts for newest confirmed orders (session dedupes sound).
           confirmed.slice(0, 5).forEach((o) => handleIncomingOrderAlert(o));
-          syncRestaurantAlertsWithOrders(confirmed);
+          syncAlertsWithOrders(confirmed, 'restaurant');
         } else {
           // No waiting orders — silence any leftover session.
-          syncRestaurantAlertsWithOrders([]);
+          syncAlertsWithOrders([], 'restaurant');
         }
       } catch (error) {
         // Non-blocking: keep polling.
@@ -243,7 +241,7 @@ export const useRestaurantNotifications = () => {
   }, []);
 
   useEffect(() => {
-    const detachUnlock = attachRestaurantAlertUnlockListeners();
+    const detachUnlock = attachAlertUnlockListeners();
     return () => {
       detachUnlock?.();
     };
@@ -256,7 +254,7 @@ export const useRestaurantNotifications = () => {
       if (!activeOrderRef.current) return;
 
       // Keep browser banner; sound stays on the shared looping session.
-      void startRestaurantAlert(activeOrderRef.current);
+      void startAlert(activeOrderRef.current, 'restaurant');
       showBackgroundOrderNotification(activeOrderRef.current);
     };
 
@@ -574,7 +572,7 @@ export const useRestaurantNotifications = () => {
           } 
         }));
 
-        stopRestaurantAlert(data);
+        stopAlert(data);
 
         if (activeOrderRef.current) {
           const activeId = getOrderAlertKey(activeOrderRef.current);
@@ -608,9 +606,9 @@ export const useRestaurantNotifications = () => {
   const clearNewOrder = (orderLike) => {
     const target = orderLike || activeOrderRef.current || newOrder;
     if (target) {
-      stopRestaurantAlert(target);
+      stopAlert(target);
     } else {
-      stopAllRestaurantAlerts();
+      stopAllAlerts();
     }
     activeOrderRef.current = null;
     setNewOrder(null);

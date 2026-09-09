@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import mongoSanitize from 'mongo-sanitize';
 import xssClean from 'xss-clean';
+import compression from 'compression';
 import routes from './routes/index.js';
 import errorHandler from './middleware/errorHandler.js';
 import { apiRateLimiter } from './middleware/rateLimit.js';
@@ -14,6 +15,9 @@ import { healthCheck } from './config/health.js';
 import { config } from './config/env.js';
 
 const app = express();
+
+// Use compression middleware to gzip responses
+app.use(compression());
 
 // Trust first proxy (essential for express-rate-limit if behind a proxy)
 app.set('trust proxy', 1);

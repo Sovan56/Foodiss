@@ -109,6 +109,9 @@ function emitOrderUpdate(order, deliveryPartnerId) {
         payload,
       );
       io.to(rooms.user(order.userId)).emit('order_status_update', payload);
+      const adminRoom = rooms.admin ? rooms.admin() : 'admin:orders';
+      io.to(adminRoom).emit('order_status_update', payload);
+      if (order._id) io.to(rooms.tracking(order._id)).emit('order_status_update', payload);
     }
 
     // Only send push notifications for key delivery milestones
@@ -588,6 +591,9 @@ export async function acceptOrderDelivery(orderId, deliveryPartnerId) {
         io.to(rooms.delivery(deliveryPartnerId)).emit('order_status_update', payload);
         io.to(rooms.restaurant(order.restaurantId)).emit('order_status_update', payload);
         io.to(rooms.user(order.userId)).emit('order_status_update', payload);
+        const adminRoom = rooms.admin ? rooms.admin() : 'admin:orders';
+        io.to(adminRoom).emit('order_status_update', payload);
+        if (order._id) io.to(rooms.tracking(order._id)).emit('order_status_update', payload);
 
         // Notify ALL other delivery partners who were offered this order to dismiss it
         const offeredPartners = order.dispatch?.offeredTo || [];

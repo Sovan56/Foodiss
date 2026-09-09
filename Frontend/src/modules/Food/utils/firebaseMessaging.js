@@ -23,6 +23,22 @@ let serviceWorkerMessageListenerAttached = false;
 const MESSAGING_APP_NAME = "web-push-app";
 const recentForegroundNotifications = new Map();
 let pushSoundAudio = null;
+const activePushAudios = new Set();
+
+export function stopAllPushSounds() {
+  for (const audio of activePushAudios) {
+    try {
+      audio.pause();
+      audio.currentTime = 0;
+    } catch {}
+  }
+  activePushAudios.clear();
+}
+
+if (typeof window !== "undefined") {
+  window.__stopAllPushSounds = stopAllPushSounds;
+}
+
 let pushSoundUnlocked = false;
 let pushSoundContext = null;
 const PUSH_DEBUG_PREFIX = "[push-debug]";
@@ -378,21 +394,11 @@ async function playPushSound(payload = {}) {
     const moduleName = normalizeModuleFromPath();
     const eventType = String(payload?.data?.type || "").toLowerCase();
 
-    // Restaurant new-order ringtone is owned by restaurantAlertSession (loop until accept).
-    // Skip FCM one-shot beeps for those events to avoid duplicate / fighting audio.
-    if (moduleName === "restaurant") {
-      try {
-        const { isRestaurantAlertRinging } = await import("@food/utils/restaurantAlertSession");
-        if (eventType === "new_order" || isRestaurantAlertRinging()) {
-          pushDebugLog(PUSH_DEBUG_PREFIX, "Skipping FCM push sound; restaurant alert session owns ringtone", {
-            eventType,
-            ringing: isRestaurantAlertRinging(),
-          });
-          return;
-        }
-      } catch {
-        if (eventType === "new_order") return;
-      }
+    // In restaurant and delivery portals, order alerts and ringtones are owned exclusively by their respective session handlers.
+    // Skip FCM standalone audio in these apps to prevent un-stoppable overlapping audio playing till end.
+    if (moduleName === "restaurant" || moduleName === "delivery") {
+      pushDebugLog(PUSH_DEBUG_PREFIX, "Skipping FCM push sound in portal (alert session owns audio)");
+      return;
     }
 
     pushDebugLog(PUSH_DEBUG_PREFIX, "playPushSound called", {
@@ -422,10 +428,14 @@ async function playPushSound(payload = {}) {
     for (const audio of players) {
       try {
         audio.currentTime = 0;
+        activePushAudios.add(audio);
+        audio.addEventListener("ended", () => activePushAudios.delete(audio), { once: true });
+        audio.addEventListener("pause", () => activePushAudios.delete(audio), { once: true });
         await audio.play();
         pushDebugLog(PUSH_DEBUG_PREFIX, "Audio playback succeeded", { source: audio.src });
         return;
       } catch (error) {
+        activePushAudios.delete(audio);
         pushDebugWarn(PUSH_DEBUG_PREFIX, "Audio playback failed", {
           source: audio.src,
           error: error?.message || error,

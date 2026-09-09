@@ -172,7 +172,6 @@ export default function AddressSelectorPage() {
 
   // Hybrid search: Google Places first, then an India-scoped Nominatim fallback.
   useEffect(() => {
-    if (!showAddressForm) return
     if (suppressSuggestionFetchRef.current) {
       suppressSuggestionFetchRef.current = false
       setIsKeywordSearching(false)
@@ -417,9 +416,74 @@ export default function AddressSelectorPage() {
           setDeliveryAddressMode("current")
         } catch {}
         toast.success("Location updated", { id: "geo" })
+        if (!showAddressForm) {
+          handleBack()
+        }
       }
     } catch (e) {
       toast.error("Failed to get location", { id: "geo" })
+    }
+  }
+
+  const selectSearchPlaceRoot = async (suggestion) => {
+    if (!suggestion) return
+    try {
+      let lat = suggestion.lat
+      let lng = suggestion.lng
+      let formattedAddress = suggestion.display || suggestion.mainText || ""
+      let city = suggestion.address?.city || ""
+      let state = suggestion.address?.state || ""
+
+      if (suggestion.source === "google" && suggestion.placeId) {
+        const ready = await ensurePlacesServices().catch(() => false)
+        if (ready && placesDetailsServiceRef.current) {
+          const place = await new Promise((resolve, reject) => {
+            placesDetailsServiceRef.current.getDetails(
+              {
+                placeId: suggestion.placeId,
+                fields: ["formatted_address", "address_components", "geometry"],
+              },
+              (result, status) => {
+                if (status === window.google?.maps?.places?.PlacesServiceStatus?.OK && result) {
+                  resolve(result)
+                } else {
+                  reject(new Error(String(status || "Place details failed")))
+                }
+              }
+            )
+          })
+          lat = place?.geometry?.location?.lat?.()
+          lng = place?.geometry?.location?.lng?.()
+          formattedAddress = place?.formatted_address || formattedAddress
+          const comps = place?.address_components || []
+          city = comps.find((c) => c.types?.includes("locality"))?.long_name || ""
+          state = comps.find((c) => c.types?.includes("administrative_area_level_1"))?.long_name || ""
+        }
+      }
+
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
+        const locationData = {
+          latitude: lat,
+          longitude: lng,
+          address: formattedAddress,
+          city,
+          state,
+          formattedAddress,
+        }
+        localStorage.setItem("userLocation", JSON.stringify(locationData))
+        notifyUserLocationChanged(locationData)
+        try {
+          setDeliveryAddressMode("current")
+        } catch {}
+        setGooglePlacesSuggestions([])
+        setKeywordAddressSuggestions([])
+        setAddressAutocompleteValue("")
+        toast.success("Location updated")
+        handleBack()
+      }
+    } catch (err) {
+      debugError("Select search place error:", err)
+      toast.error("Could not select this location")
     }
   }
 
@@ -987,6 +1051,60 @@ export default function AddressSelectorPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto pb-10">
+        {/* Search Bar on Root View */}
+        <div className="px-4 py-3 bg-white dark:bg-[#1a1a1a] border-b border-gray-100 dark:border-gray-800">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-gray-400" />
+            </div>
+            <Input
+              value={addressAutocompleteValue}
+              onChange={(e) => setAddressAutocompleteValue(e.target.value)}
+              placeholder="Search area, landmark or street..."
+              className="pl-9 h-11 bg-gray-100 dark:bg-gray-800/80 border-none rounded-xl text-sm focus:ring-2 focus:ring-[#EB590E]"
+            />
+            {isKeywordSearching && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-[#EB590E] border-t-transparent" />
+              </div>
+            )}
+          </div>
+
+          {/* Root Search Suggestions */}
+          {(googlePlacesSuggestions.length > 0 || keywordAddressSuggestions.length > 0) && (
+            <div className="mt-2 bg-white dark:bg-[#1a1a1a] rounded-xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden z-30 divide-y dark:divide-gray-800">
+              {googlePlacesSuggestions.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => void selectSearchPlaceRoot(s)}
+                  className="w-full px-3 py-2.5 flex items-start gap-2.5 hover:bg-orange-50 dark:hover:bg-orange-900/10 text-left transition-colors"
+                >
+                  <MapPin className="h-4 w-4 text-[#EB590E] mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{s.mainText}</p>
+                    <p className="text-xs text-gray-500 truncate">{s.secondaryText}</p>
+                  </div>
+                </button>
+              ))}
+              {keywordAddressSuggestions.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => void selectSearchPlaceRoot(s)}
+                  className="w-full px-3 py-2.5 flex items-start gap-2.5 hover:bg-orange-50 dark:hover:bg-orange-900/10 text-left transition-colors"
+                >
+                  <MapPin className="h-4 w-4 text-[#EB590E] mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{s.display}</p>
+                    <p className="text-xs text-gray-500 truncate">{s.address?.city || s.address?.state}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="p-4 bg-gray-50 dark:bg-gray-900 border-b dark:border-gray-800">
           <button 
             onClick={handleUseCurrentLocation}

@@ -395,6 +395,9 @@ export async function notifyRestaurantNewOrder(orderDoc) {
         `[RestaurantOrders] Emitting new_order to ${rooms.restaurant(orderDoc.restaurantId)} for order ${orderDoc._id?.toString?.() || ''}`,
       );
       io.to(rooms.restaurant(orderDoc.restaurantId)).emit("new_order", payload);
+      // Real-time broadcast to Admin Dashboard
+      const adminRoom = rooms.admin ? rooms.admin() : 'admin:orders';
+      io.to(adminRoom).emit("admin_new_order", payload);
     }
 
     await notifyOwnersSafely(

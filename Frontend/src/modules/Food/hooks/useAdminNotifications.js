@@ -72,9 +72,11 @@ const mapPendingRestaurants = (rows = []) =>
 const mapDeliveryJoinRequests = (response) => {
   const payload = response?.data?.data;
   const rows =
+    payload?.requests ||
     payload?.partners ||
     payload?.data ||
     payload?.items ||
+    response?.data?.requests ||
     response?.data?.partners ||
     [];
 

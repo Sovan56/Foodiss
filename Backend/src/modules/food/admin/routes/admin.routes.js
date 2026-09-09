@@ -1,6 +1,7 @@
 import express from 'express';
 import { AuthError } from '../../../../core/auth/errors.js';
 import * as adminController from '../controllers/admin.controller.js';
+import * as incentiveController from '../controllers/incentive.controller.js';
 import * as foodApprovalController from '../controllers/foodApproval.controller.js';
 import * as addonsApprovalController from '../controllers/addonsApproval.controller.js';
 import * as businessSettingsController from '../controllers/businessSettings.controller.js';
@@ -441,5 +442,13 @@ router.put('/pages-social-media/:key', upsertAdminPageController);
 
 router.get('/sidebar-badges', adminController.getSidebarBadges);
 router.get('/notifications/fssai-expired', adminController.getExpiredFssaiNotifications);
+
+// Incentive Routes
+router.get('/incentive/settings/rain', requireAdminPermission('system_settings', 'view'), incentiveController.getRainIncentiveSettings);
+router.put('/incentive/settings/rain', requireAdminPermission('system_settings', 'edit'), incentiveController.updateRainIncentiveSettings);
+router.get('/incentive/slabs', requireAdminPermission('system_settings', 'view'), incentiveController.getIncentiveSlabs);
+router.post('/incentive/slabs', requireAdminPermission('system_settings', 'edit'), incentiveController.createIncentiveSlab);
+router.put('/incentive/slabs/:id', requireAdminPermission('system_settings', 'edit'), incentiveController.updateIncentiveSlab);
+router.delete('/incentive/slabs/:id', requireAdminPermission('system_settings', 'edit'), incentiveController.deleteIncentiveSlab);
 
 export default router;

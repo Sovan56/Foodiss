@@ -9,6 +9,7 @@ import {
   VolumeX,
 } from "lucide-react";
 import { getRestaurantCookingNote } from "@food/utils/orderCookingNote";
+import { stopAlert } from "@food/utils/audioSessionManager";
 
 const getOrderTotal = (orderLike) => {
   if (!orderLike) return 0;
@@ -125,6 +126,10 @@ export default function NewOrderAcceptCard({
   const handleAccept = async () => {
     if (isAcceptingOrder || isExpired) return;
     setIsAcceptingOrder(true);
+    // Stop ringing immediately on accept interaction
+    try {
+      stopAlert(order);
+    } catch {}
     try {
       await onAccept?.(order, prepTime);
     } catch {
@@ -152,6 +157,9 @@ export default function NewOrderAcceptCard({
 
     if (acceptSwipeProgress >= 0.45) {
       setAcceptSwipeProgress(1);
+      try {
+        stopAlert(order);
+      } catch {}
       setTimeout(() => {
         void handleAccept();
       }, 160);
@@ -415,7 +423,12 @@ export default function NewOrderAcceptCard({
             )}
             <button
               type="button"
-              onClick={() => onReject?.(order)}
+              onClick={() => {
+                try {
+                  stopAlert(order);
+                } catch {}
+                onReject?.(order);
+              }}
               disabled={isAcceptingOrder}
               className="w-full py-2.5 rounded-2xl font-bold text-[12px] text-gray-400 hover:text-red-500 transition-colors uppercase tracking-widest disabled:opacity-50"
             >
@@ -476,7 +489,12 @@ export default function NewOrderAcceptCard({
 
         <button
           type="button"
-          onClick={() => onReject?.(order)}
+          onClick={() => {
+            try {
+              stopAlert(order);
+            } catch {}
+            onReject?.(order);
+          }}
           disabled={isAcceptingOrder}
           className="w-full py-3 rounded-2xl font-bold text-[13px] text-gray-400 hover:text-red-500 transition-colors uppercase tracking-widest disabled:opacity-50"
         >

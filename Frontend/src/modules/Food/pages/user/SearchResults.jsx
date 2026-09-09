@@ -849,7 +849,7 @@ export default function SearchResults() {
                   ) : cat.image ? (
                     <div className={`w-16 h-16 rounded-full overflow-hidden border-2 transition-all ${isSelected ? 'border-[#EB590E] dark:border-[#EB590E] shadow-lg' : 'border-transparent'
                       }`}>
-                      <img
+                      <img loading="lazy" decoding="async"
                         src={cat.image}
                         alt={cat.name}
                         className="w-full h-full object-cover"
@@ -940,7 +940,7 @@ export default function SearchResults() {
                       {/* Image Container */}
                       <div className="relative aspect-square rounded-xl overflow-hidden mb-2 bg-gray-200 dark:bg-gray-800">
                         {restaurant.image ? (
-                          <img
+                          <img loading="lazy" decoding="async"
                             src={restaurant.image}
                             alt={restaurant.name}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -1008,7 +1008,7 @@ export default function SearchResults() {
                     {/* Image Section */}
                     <div className="relative h-44 sm:h-52 md:h-60 lg:h-64 xl:h-72 w-full overflow-hidden rounded-t-md flex-shrink-0 bg-gray-200 dark:bg-gray-800">
                       {restaurant.image ? (
-                        <img
+                        <img loading="lazy" decoding="async"
                           src={restaurant.image}
                           alt={restaurant.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

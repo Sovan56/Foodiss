@@ -298,7 +298,11 @@ const orderSchema = new mongoose.Schema(
         sendCutlery: { type: Boolean, default: true },
         deliveryFleet: { type: String, default: 'standard', trim: true },
         scheduledAt: { type: Date, default: null },
-        riderEarning: { type: Number, default: 0, min: 0 },
+        riderEarning: { type: Number, default: 0 },
+        rainIncentiveApplied: { type: Boolean, default: false },
+        rainIncentiveType: { type: String, enum: ['FIXED', 'PERCENTAGE'] },
+        rainIncentiveValue: { type: Number, default: 0 },
+        rainIncentiveAmount: { type: Number, default: 0 },
         // Can be negative when discounts/rider pay exceed platform income; keep the real value visible.
         platformProfit: { type: Number, default: 0 },
         /** Restaurant ↔ customer driving distance (km) for delivery-partner offer UI */

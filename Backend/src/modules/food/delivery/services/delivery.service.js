@@ -603,13 +603,15 @@ export const getDeliveryPartnerEarnings = async (deliveryPartnerId, query = {}) 
             {
                 $group: {
                     _id: null,
-                    totalEarnings: { $sum: { $ifNull: ['$riderEarning', 0] } }
+                    totalEarnings: { $sum: { $ifNull: ['$riderEarning', 0] } },
+                    totalRainIncentive: { $sum: { $ifNull: ['$rainIncentiveAmount', 0] } }
                 }
             }
         ])
     ]);
 
     const totalEarnings = Number(agg?.[0]?.totalEarnings) || 0;
+    const totalRainIncentive = Number(agg?.[0]?.totalRainIncentive) || 0;
 
     // Frontend only strongly relies on totalEarnings + totalOrders.
     const summary = {
@@ -617,13 +619,53 @@ export const getDeliveryPartnerEarnings = async (deliveryPartnerId, query = {}) 
         totalOrders,
         totalHours: 0,
         totalMinutes: 0,
-        orderEarning: totalEarnings,
-        incentive: 0,
-        otherEarnings: 0
+        orderEarning: totalEarnings - totalRainIncentive,
+        incentive: totalRainIncentive,
+        otherEarnings: 0,
+        rainIncentive: totalRainIncentive
     };
+
+    // Weekly slab progress (non-blocking, always returns even on failure)
+    let slabProgress = null;
+    try {
+        const { FoodDeliveryIncentiveSlab } = await import('../../admin/models/foodDeliveryIncentive.model.js');
+        const activeSlabs = await FoodDeliveryIncentiveSlab.find({ isActive: true }).sort({ deliveriesRequired: 1 }).lean();
+        
+        if (activeSlabs && activeSlabs.length > 0) {
+            // Always use the current week for slab progress (Mon-Sun)
+            const now = new Date();
+            const dayOfWeek = now.getDay() || 7;
+            const startOfWeek = new Date(now);
+            startOfWeek.setHours(0, 0, 0, 0);
+            startOfWeek.setDate(startOfWeek.getDate() - (dayOfWeek - 1));
+
+            const weeklyDeliveries = await FoodOrder.countDocuments({
+                'dispatch.deliveryPartnerId': partnerId,
+                orderStatus: 'delivered',
+                'deliveryState.deliveredAt': { $gte: startOfWeek }
+            });
+
+            slabProgress = {
+                weeklyDeliveries,
+                slabs: activeSlabs.map(slab => ({
+                    _id: slab._id,
+                    slabName: slab.slabName,
+                    deliveriesRequired: slab.deliveriesRequired,
+                    extraIncentive: slab.extraIncentive,
+                    isUnlocked: weeklyDeliveries >= slab.deliveriesRequired,
+                    progress: Math.min(100, Math.round((weeklyDeliveries / slab.deliveriesRequired) * 100))
+                })),
+                nextSlab: activeSlabs.find(s => weeklyDeliveries < s.deliveriesRequired) || null,
+                weekStart: startOfWeek.toISOString()
+            };
+        }
+    } catch (e) {
+        // Silently ignore — slab feature may not be configured
+    }
 
     return {
         summary,
+        slabProgress,
         period,
         date: date.toISOString(),
         pagination: { page, limit, total: totalOrders }
