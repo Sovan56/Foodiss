@@ -17,6 +17,8 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
+            set -e # Exit immediately if any command fails!
+
             # Navigate to the cloned repository
             cd ~/Foodiss
 
