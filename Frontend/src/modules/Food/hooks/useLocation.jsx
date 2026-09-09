@@ -48,7 +48,7 @@ let globalReverseGeocodeLastSuccess = null
 
 // Default behavior: resolve from cache/DB quickly, and when permission is already granted
 // keep a live geolocation watch so zone/location updates react without page refresh.
-const AUTO_START_LIVE_WATCH = true
+const AUTO_START_LIVE_WATCH = false
 const HIGH_ACCURACY_GEO_OPTIONS = {
   enableHighAccuracy: true,
   timeout: 15000,
@@ -1654,15 +1654,18 @@ export function useLocation() {
           return freshLoc
         }
 
-        // Always ask for a live GPS fix on a new tab / first load.
-        // Cached DB/localStorage is only used as a fast first paint.
-        void refreshLiveGps({ promptIfNeeded: true })
+        // Only ask for a live GPS fix on load if we don't have a location yet.
+        if (!hasUsableInitialLocation) {
+          void refreshLiveGps({ promptIfNeeded: true })
+        }
 
         const onTabVisible = () => {
           if (typeof document !== "undefined" && document.visibilityState && document.visibilityState !== "visible") {
             return
           }
-          void refreshLiveGps({ promptIfNeeded: !hasUsableInitialLocation })
+          if (!hasUsableInitialLocation) {
+            void refreshLiveGps({ promptIfNeeded: true })
+          }
         }
 
         window.addEventListener("focus", onTabVisible)
