@@ -41,6 +41,11 @@ jobs:
             # Update Frontend
             echo "Updating Frontend..."
             cd ../Frontend
+            
+            # Automatically generate the correct frontend environment file
+            echo "VITE_API_BASE_URL=https://foodissapp.com/api/v1" > .env.production
+            echo "VITE_UPLOAD_BASE_URL=https://foodissapp.com/uploads" >> .env.production
+            
             npm install
             npm run build
 
