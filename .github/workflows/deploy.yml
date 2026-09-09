@@ -47,6 +47,19 @@ jobs:
             # Automatically generate the correct frontend environment file
             echo "VITE_API_BASE_URL=https://foodissapp.com/api/v1" > .env.production
             echo "VITE_UPLOAD_BASE_URL=https://foodissapp.com/uploads" >> .env.production
+            echo "VITE_GOOGLE_MAPS_API_KEY=AIzaSyA7AFu-rCgr0DXSefxgQmUiOIx363YsBAw" >> .env.production
+            echo "VITE_RAZORPAY_KEY_ID=rzp_test_Si6UhEh0SulgQZ" >> .env.production
+            
+            # Firebase
+            echo "VITE_FIREBASE_API_KEY=AIzaSyBJHBrhINqRV7nIN2ufAMv7hAsaU2stfko" >> .env.production
+            echo "VITE_FIREBASE_AUTH_DOMAIN=foodiss-001.firebaseapp.com" >> .env.production
+            echo "VITE_FIREBASE_PROJECT_ID=foodiss-001" >> .env.production
+            echo "VITE_FIREBASE_STORAGE_BUCKET=foodiss-001.firebasestorage.app" >> .env.production
+            echo "VITE_FIREBASE_MESSAGING_SENDER_ID=1092283413350" >> .env.production
+            echo "VITE_FIREBASE_APP_ID=1:1092283413350:web:d32419bdeedf2cc8464ea7" >> .env.production
+            echo "VITE_FIREBASE_MEASUREMENT_ID=G-5P5Y1RNGZ2" >> .env.production
+            echo "VITE_FIREBASE_DATABASE_URL=https://foodiss-001-default-rtdb.asia-southeast1.firebasedatabase.app/" >> .env.production
+            echo "VITE_FIREBASE_VAPID_KEY=BFycC8wolFm5kwfxHZe1Q3bUqaLk62ZrC2Tx8mv-Z6VhYdtN_CTp50Tfhov3Ge9Em6BbZ7oh0ZfcdxDGFRq_jnE" >> .env.production
             
             npm install
             npm run build
