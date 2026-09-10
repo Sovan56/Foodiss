@@ -15,19 +15,27 @@ let playInFlight = null;
 let vibrationInterval = null;
 
 function startVibrationLoop() {
-  if (typeof navigator === 'undefined' || !navigator.vibrate) return;
   if (vibrationInterval) clearInterval(vibrationInterval);
   
+  const doVibrate = () => {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try { navigator.vibrate([500, 300, 500]); } catch (e) {}
+    }
+    if (isFlutterWebView()) {
+      callNativeHandlers(['vibrate', 'triggerVibration', 'vibrateDevice']);
+    }
+  };
+
   // Initial pattern
-  navigator.vibrate([500, 300, 500]);
+  doVibrate();
   
   // Repeat every 2.5 seconds
   vibrationInterval = setInterval(() => {
-    if (pendingOrders.size === 0 && pendingKeys.size === 0 || muted) {
+    if ((pendingOrders.size === 0 && pendingKeys.size === 0) || muted) {
       stopVibrationLoop();
       return;
     }
-    navigator.vibrate([500, 300, 500]);
+    doVibrate();
   }, 2500);
 }
 
@@ -37,7 +45,10 @@ function stopVibrationLoop() {
     vibrationInterval = null;
   }
   if (typeof navigator !== 'undefined' && navigator.vibrate) {
-    navigator.vibrate(0);
+    try { navigator.vibrate(0); } catch (e) {}
+  }
+  if (isFlutterWebView()) {
+    callNativeHandlers(['cancelVibration', 'stopVibration']);
   }
 }
 
