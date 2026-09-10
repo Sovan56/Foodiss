@@ -229,10 +229,10 @@ async function ensureRinging(orderLike = {}, context = "delivery") {
   if (playInFlight) return playInFlight;
 
   playInFlight = (async () => {
+    // Try to start native loop (returns true even if handler is missing because it doesn't throw)
     const nativeStarted = await startNativeLoop(orderLike, context);
-    if (nativeStarted) return true;
 
-    // One-shot native feedback (non-loop) then fall back to web loop.
+    // One-shot native feedback (non-loop)
     await callNativeHandlers(
       ["playNotificationSound", "triggerNotificationFeedback"],
       {
@@ -243,6 +243,8 @@ async function ensureRinging(orderLike = {}, context = "delivery") {
       },
     );
 
+    // Always fallback to web loop because the current Flutter apps don't implement the native audio handlers.
+    // The native callHandler resolves to null instead of throwing, so nativeStarted is misleadingly true.
     return playWebLoop();
   })().finally(() => {
     playInFlight = null;
