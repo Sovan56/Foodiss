@@ -214,12 +214,27 @@ export const useOrderManager = () => {
     }
   };
 
+  const rejectOrder = async (order) => {
+    stopAllAlerts();
+    const orderId = canonicalOrderId(order);
+    if (!orderId) {
+      return;
+    }
+
+    try {
+      await deliveryAPI.rejectOrder(orderId, { reason: "Rejected by delivery partner" });
+    } catch (error) {
+      console.error('Reject Order Error:', error);
+    }
+  };
+
   const resetTrip = () => {
     clearActiveOrder();
   };
 
   return {
     acceptOrder,
+    rejectOrder,
     reachPickup,
     pickUpOrder,
     reachDrop,

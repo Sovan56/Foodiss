@@ -100,7 +100,7 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
   const navigate = useNavigate();
   const { isOnline, toggleOnline, activeOrder, tripStatus, setRiderLocation, setActiveOrder, updateTripStatus, clearActiveOrder, routeDurationMins } = useDeliveryStore();
   const { isWithinRange, distanceToTarget, displayDistanceMeters, distanceLabel } = useProximityCheck();
-  const { acceptOrder, reachPickup, pickUpOrder, reachDrop, completeDelivery, resetTrip } = useOrderManager();
+  const { acceptOrder, reachPickup, pickUpOrder, reachDrop, completeDelivery, resetTrip, rejectOrder } = useOrderManager();
   const { newOrder, clearNewOrder, clearAllOffers, orderStatusUpdate, clearOrderStatusUpdate, isConnected: isSocketConnected, emitLocation } = useDeliveryNotifications();
   const companyName = useCompanyName();
   const { unreadCount: notificationUnreadCount } = useNotificationInbox("delivery", { limit: 20 });
@@ -963,6 +963,12 @@ export default function DeliveryHomeV2({ tab = 'feed' }) {
                       }
                     }}
                     onReject={() => {
+                      const orderToReject = incomingOrder;
+                      if (orderToReject) {
+                        rejectOrder(orderToReject);
+                      }
+                      clearAllOffers();
+                      setIncomingOrder(null);
                       // Advance to next queued offer (if any) without killing the trip flow.
                       clearNewOrder({ advance: true });
                     }}

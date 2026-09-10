@@ -185,41 +185,54 @@ const buildMessagePayload = (payload = {}, token) => {
         if (image) {
             message.notification.image = image;
         }
+        
+        message.android = {
+            priority: 'high',
+            notification: {
+                channel_id: 'default',
+                sound: 'default',
+                default_vibrate_timings: true,
+                default_light_settings: true
+            }
+        };
+
+        message.apns = {
+            payload: {
+                aps: {
+                    sound: 'default',
+                    'content-available': 1
+                }
+            }
+        };
+
+        message.webpush = {
+            headers: {
+                Urgency: 'high'
+            },
+            notification: {
+                title: notification.title,
+                body: notification.body,
+                icon: image || payload.icon || '/favicon.ico'
+            }
+        };
+    } else {
+        // Data-only payload configuration
+        message.android = {
+            priority: 'high'
+        };
+        
+        message.apns = {
+            payload: {
+                aps: {
+                    'content-available': 1
+                }
+            }
+        };
     }
 
     if (Object.keys(data).length > 0) {
         message.data = data;
     }
-
-    message.android = {
-        priority: 'high',
-        notification: {
-            channel_id: 'default',
-            sound: 'default',
-            default_vibrate_timings: true,
-            default_light_settings: true
-        }
-    };
-
-    message.apns = {
-        payload: {
-            aps: {
-                sound: 'default',
-                'content-available': 1
-            }
-        }
-    };
-
-    message.webpush = {
-        headers: {
-            Urgency: 'high'
-        },
-        notification: {
-            title: notification.title,
-            body: notification.body,
-            icon: image || payload.icon || '/favicon.ico'
-        }
-    };
 
     return message;
 };
