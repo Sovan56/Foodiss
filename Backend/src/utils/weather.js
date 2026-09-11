@@ -11,7 +11,7 @@ export async function isRainingAtLocation(lat, lng) {
 
     // Use environment variable for Weather API key. 
     // This could be Google or OWM depending on the final production setup.
-    const apiKey = config.weatherApiKey || process.env.WEATHER_API_KEY;
+    const apiKey = config.weatherApiKey || process.env.WEATHER_API_KEY || config.googleMapsApiKey;
 
     if (!apiKey) {
         logger.warn('Weather API Key is not configured. Falling back to default (no rain).');
