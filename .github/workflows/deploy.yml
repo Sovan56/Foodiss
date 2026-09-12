@@ -20,12 +20,12 @@ jobs:
             set -e # Exit immediately if any command fails!
 
             # Navigate to the repository, cloning it if it doesn't exist
-            if [ ! -d "$HOME/Foodiss" ]; then
+            if [ ! -d "$HOME/foodiss" ]; then
               echo "Repository not found! Cloning it now..."
               cd $HOME
-              git clone https://github.com/Sovan56/Foodiss.git
+              git clone https://github.com/Sovan56/Foodiss.git foodiss
             fi
-            cd $HOME/Foodiss
+            cd $HOME/foodiss
 
             # Pull latest changes
             git reset --hard
