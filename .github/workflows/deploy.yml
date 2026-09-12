@@ -35,8 +35,9 @@ jobs:
             echo "Updating Backend..."
             cd Backend
             npm install
-            # Delete old process if it exists, then start fresh in current directory
-            pm2 delete foodiss-backend || true
+            # Forcefully clear old processes to prevent old code from running
+            pm2 delete all || true
+            fuser -k 5000/tcp || true
             pm2 start server.js --name foodiss-backend
             pm2 save
 
