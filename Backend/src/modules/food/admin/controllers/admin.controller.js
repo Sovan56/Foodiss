@@ -1675,7 +1675,7 @@ export async function processRefund(req, res, next) {
         const order = await mongoose.model('FoodOrder').findById(orderId).lean();
         
         if (order && order.userId) {
-            const { notifyOwnersSafely } = await import('../../notifications/firebase.service.js');
+            const { notifyOwnersSafely } = await import('../../../../core/notifications/firebase.service.js');
             await notifyOwnersSafely(
                 [{ ownerType: 'USER', ownerId: order.userId }],
                 {

@@ -6,6 +6,7 @@ import { FoodZone } from '../../admin/models/zone.model.js';
 import { FoodZoneDeliverySurge } from '../../admin/models/zoneDeliverySurge.model.js';
 import { FoodOffer } from '../../admin/models/offer.model.js';
 import { FoodOfferUsage } from '../../admin/models/offerUsage.model.js';
+import { FoodRainIncentiveSettings } from '../../admin/models/foodDeliveryIncentive.model.js';
 import { ValidationError } from '../../../../core/auth/errors.js';
 import {
   calculateDistanceKm,
@@ -249,6 +250,33 @@ export function calculateRiderEarning(feeSettings = {}, distanceKm, deliverySurg
   });
 
   return Number.isFinite(earning) ? Math.round(earning) + surge : surge;
+}
+
+export async function calculateRainIncentive(riderEarning, lat, lng) {
+  const settings = await FoodRainIncentiveSettings.findOne({ key: 'global' }).lean();
+  
+  if (!settings || !settings.isEnabled) {
+    return {
+      rainIncentiveApplied: false,
+      rainIncentiveType: null,
+      rainIncentiveValue: 0,
+      rainIncentiveAmount: 0
+    };
+  }
+
+  let rainIncentiveAmount = 0;
+  if (settings.incentiveType === 'FIXED') {
+    rainIncentiveAmount = Number(settings.incentiveValue) || 0;
+  } else if (settings.incentiveType === 'PERCENTAGE') {
+    rainIncentiveAmount = Math.round((Number(riderEarning) * (Number(settings.incentiveValue) || 0)) / 100);
+  }
+
+  return {
+    rainIncentiveApplied: true,
+    rainIncentiveType: settings.incentiveType,
+    rainIncentiveValue: settings.incentiveValue,
+    rainIncentiveAmount
+  };
 }
 
 export async function calculateOrderPricing(userId, dto, options = {}) {
