@@ -18,15 +18,16 @@ export const NewOrderModal = ({ order, onAccept, onReject, onMinimize, swapGuard
   const [lockedOrder] = useState(() => order);
   const [distanceLabel, setDistanceLabel] = useState(null);
   const [etaMins, setEtaMins] = useState(null);
+  const [isAccepted, setIsAccepted] = useState(false);
 
   useEffect(() => {
     if (timeLeft <= 0) {
-      onReject();
+      if (!isAccepted) onReject();
       return;
     }
     const timer = setInterval(() => setTimeLeft((t) => t - 1), 1000);
     return () => clearInterval(timer);
-  }, [timeLeft, onReject]);
+  }, [timeLeft, onReject, isAccepted]);
 
   useEffect(() => {
     if (!lockedOrder) return undefined;
@@ -146,7 +147,7 @@ export const NewOrderModal = ({ order, onAccept, onReject, onMinimize, swapGuard
         dragConstraints={{ top: 0, bottom: 0 }}
         dragElastic={{ top: 0, bottom: 0.5 }}
         onDragEnd={(e, info) => {
-          if (info.offset.y > 100 || info.velocity.y > 400) {
+          if (!isAccepted && (info.offset.y > 100 || info.velocity.y > 400)) {
             onReject();
           }
         }}
@@ -254,13 +255,17 @@ export const NewOrderModal = ({ order, onAccept, onReject, onMinimize, swapGuard
           )}
           <ActionSlider
             label="Slide to Accept"
-            disabled={swapGuard}
-            onConfirm={() => onAccept?.(lockedOrder)}
+            disabled={swapGuard || isAccepted}
+            onConfirm={() => {
+              setIsAccepted(true);
+              onAccept?.(lockedOrder);
+            }}
             color="var(--module-theme-color, #00B761)"
           />
           <button
-            onClick={onReject}
-            className="w-full py-3 text-sm font-black uppercase tracking-widest text-gray-400 hover:text-red-500 transition-colors"
+            onClick={() => { if (!isAccepted) onReject(); }}
+            disabled={isAccepted}
+            className={`w-full py-3 text-sm font-black uppercase tracking-widest transition-colors ${isAccepted ? 'text-gray-200' : 'text-gray-400 hover:text-red-500'}`}
           >
             Reject Order
           </button>
