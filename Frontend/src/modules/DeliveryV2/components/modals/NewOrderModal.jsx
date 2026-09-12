@@ -142,6 +142,14 @@ export const NewOrderModal = ({ order, onAccept, onReject, onMinimize, swapGuard
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+        drag="y"
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.5 }}
+        onDragEnd={(e, info) => {
+          if (info.offset.y > 100 || info.velocity.y > 400) {
+            onReject();
+          }
+        }}
         className="w-full max-w-lg bg-white rounded-t-[3.5rem] shadow-[0_-25px_80px_rgba(0,0,0,0.5)] flex flex-col max-h-[85vh] relative overflow-hidden"
       >
         <div className="w-full flex justify-center py-3 bg-white relative z-20">
